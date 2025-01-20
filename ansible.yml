@@ -1,0 +1,21 @@
+---
+- name: Local Machine Setup
+  hosts: localhost
+  connection: local
+  become: yes  # для sudo прав
+
+  tasks:
+    - name: Install curl
+      package:
+        name: curl
+        state: present
+
+    - name: Install Ollama
+      shell: curl -fsSL https://ollama.com/install.sh | sh
+      args:
+        creates: /usr/local/bin/ollama  # предотвращает повторную установку
+
+    - name: Run Ollama with llama2
+      shell: ollama run llama2:latest
+      async: 45  # запуск в асинхронном режиме
+      poll: 0    # не ждать завершения
