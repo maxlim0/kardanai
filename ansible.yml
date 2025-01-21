@@ -11,30 +11,27 @@
       shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 1; done
       
   tasks:
-    - name: Install curl and python3-pip
+    - name: Install required packages
       package:
         name: 
           - curl
           - python3-pip
-          - python3-poetry
-          - llvm
-          - llvm-dev
           - python3-dev
           - build-essential
+          - python3-poetry
+          - llvm-14
+          - llvm-14-dev
+          - git
         state: present
 
-    - name: Install Poetry
+    - name: Set LLVM 14 as default
       shell: |
-        export HOME=/root
-        curl -sSL https://install.python-poetry.org | python3 -
+        update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-14 100
 
     - name: Run Poetry Install
       shell: "poetry install"
       args:
         chdir: "{{ PROJECT_DIR }}"
-      environment:
-        PATH: "/root/.local/bin:{{ ansible_env.PATH }}"
-        HOME: "/root"
 
     - name: Install Ollama
       shell: curl -fsSL https://ollama.com/install.sh | sh
