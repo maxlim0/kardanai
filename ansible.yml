@@ -3,25 +3,54 @@
   hosts: localhost
   connection: local
 
+  vars:
+    PROJECT_DIR: "/root/kardanai"
+
   pre_tasks:
     - name: Wait for apt lock release
       shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 1; done
       
   tasks:
-    - name: Install curl
+    - name: Install curl and python3-pip
       package:
-        name: curl
+        name: 
+          - curl
+          - python3-pip
         state: present
+
+    - name: Install Poetry
+      shell: |
+        export HOME=/root
+        curl -sSL https://install.python-poetry.org | python3 -
+
+    - name: Add Poetry to PATH
+      shell: |
+        export PATH="/root/.local/bin:$PATH"
+        export HOME=/root
+        poetry --version
+      register: poetry_version
+      
+    - name: Debug Poetry version
+      debug:
+        var: poetry_version.stdout
+
+    - name: Run Poetry Install
+      shell: "poetry install"
+      args:
+        chdir: "{{ PROJECT_DIR }}"
+      environment:
+        PATH: "/root/.local/bin:{{ ansible_env.PATH }}"
+        HOME: "/root"
 
     - name: Install Ollama
       shell: curl -fsSL https://ollama.com/install.sh | sh
       args:
-        creates: /usr/local/bin/ollama  # предотвращает повторную установку
-
-    - name: Run Ollama service
-      shell: service ollama start
+        creates: /usr/local/bin/ollama
 
     - name: Pull llama2
       shell: |
         export HOME=/root
-        ollama pull llama3.2:1b
+        ollama pull llama2:latest
+      
+    - name: Run Ollama service
+      shell: service ollama start
