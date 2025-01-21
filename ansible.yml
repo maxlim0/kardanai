@@ -38,10 +38,11 @@
       args:
         creates: /usr/local/bin/ollama
 
+    - name: Run Ollama service
+      shell: service ollama start
+
     - name: Pull llama2
       shell: |
         export HOME=/root
-        ollama pull llama2:latest
+        ollama pull llama3.2:1b
       
-    - name: Run Ollama service
-      shell: service ollama start

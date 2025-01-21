@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Configuration parameters
 BASE_INPUT_PATH = "data-test/processed/ukr_laws/"  # Base path for input files
-BASE_OUTPUT_PATH = "data-test/processed/summarized"  # Base path for output files
+BASE_OUTPUT_PATH = "data-test/processed/summarization"  # Base path for output files
 CONTEXT_WINDOW = 4000  # Context window size in tokens
 CHUNK_OVERLAP = 100  # Overlap between chunks
 
