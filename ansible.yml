@@ -16,23 +16,17 @@
         name: 
           - curl
           - python3-pip
+          - python3-poetry
+          - llvm
+          - llvm-dev
+          - python3-dev
+          - build-essential
         state: present
 
     - name: Install Poetry
       shell: |
         export HOME=/root
         curl -sSL https://install.python-poetry.org | python3 -
-
-    - name: Add Poetry to PATH
-      shell: |
-        export PATH="/root/.local/bin:$PATH"
-        export HOME=/root
-        poetry --version
-      register: poetry_version
-      
-    - name: Debug Poetry version
-      debug:
-        var: poetry_version.stdout
 
     - name: Run Poetry Install
       shell: "poetry install"

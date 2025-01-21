@@ -6,7 +6,6 @@ from llama_index.core import Settings, SimpleDirectoryReader
 from llama_index.core.llms import ChatMessage
 from pathlib import Path
 import os
-from datetime import datetime
 import logging
 import prompt
 
