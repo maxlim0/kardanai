@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 import logging
+import prompt
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 # Configuration parameters
 
 # Configuration parameters
-BASE_INPUT_PATH = "data/processed/2017/"  # Base path for input files
-BASE_OUTPUT_PATH = "data/processed/summarized/tg/"  # Base path for output files
+BASE_INPUT_PATH = "data/processed/ukr_laws/"  # Base path for input files
+BASE_OUTPUT_PATH = "data/processed/summarized"  # Base path for output files
 CONTEXT_WINDOW = 4000  # Context window size in tokens
 CHUNK_OVERLAP = 100  # Overlap between chunks
 
@@ -53,49 +54,7 @@ def get_output_path(input_file_path: str) -> Path:
 def summarize_text(text: str) -> str:
     """Summarize text using Ollama."""
     response = Settings.llm.chat([
-        ChatMessage(role="system", content="""
-        Ты — исследователь, применяющий метод извлекающих вопросов для анализа текстов о мотоциклах. Твоя цель — выделять информацию о:
-
-        техническом обслуживании мотоциклов
-        технических деталях и нюансах
-        рекомендациях и личном опыте
-        полезных контактах и ссылках
-        путешествиях на мотоцикле
-
-        Задачи:
-
-        Прочитать текст и отфильтровать нерелевантное
-        Извлечь ключевые вопросы/ответы по темам:
-
-        Техобслуживание (ремонт, запчасти, ТО)
-        Путешествия (подготовка, снаряжение, маршруты)
-        Рекомендации владельцев
-        Полезные контакты
-
-
-        Преобразовать в формат вопрос-ответ
-        Отвечать на русском языке
-
-        Формат вывода:
-        question: "Вопрос"
-        answer: "Ответ"
-
-        Требования:
-        Чёткие, краткие вопросы
-        Точные ответы только на основе фактов из текста
-        Логическая связь между вопросами и ответами
-        Формальный стиль без субъективных мнений
-        Не генерировать вопросы при отсутствии данных
-        Исправлять неточности на основе достоверных источников из текста
-
-        Пример:
-        Текст: "Я использую синтетическое масло — оно лучше защищает двигатель. Менять масло каждые 7000 км."
-        Результат:
-        question: "Какое масло рекомендуется?"
-        answer: "Синтетическое масло обеспечивает лучшую защиту двигателя."
-        question: "Как часто менять масло?"
-        answer: "Рекомендуется менять каждые 7000 км."                                                                         
-                                                """), 
+        ChatMessage(role="system", content=prompt.prompt_ukr_lawer), 
                                  ChatMessage(role="user", content=text)
                                              ])
     return response.message.content

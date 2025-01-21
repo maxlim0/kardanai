@@ -1,15 +1,7 @@
 #!/bin/bash
 
-# Обновление системы
-apt-get update
-apt-get upgrade -y
-
 # Установка необходимых зависимостей
-apt-get install -y python3 python3-pip software-properties-common
-
-# Установка Ansible
-apt-add-repository --yes --update ppa:ansible/ansible
-apt-get install -y ansible git
+apt-get install -y ansible-core git
 
 # Создание директории для Ansible
 mkdir -p /etc/ansible
@@ -18,6 +10,6 @@ mkdir -p /etc/ansible
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
 
 git clone https://github.com/maxlim0/kardanai.git
-cd kardanai.git
+cd kardanai
 
-ansible-playbook absible.yml
+ansible-playbook ansible.yml

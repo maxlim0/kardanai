@@ -4,6 +4,10 @@
   connection: local
   become: yes  # для sudo прав
 
+  pre_tasks:
+    - name: Wait for apt lock release
+      shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 1; done
+      
   tasks:
     - name: Install curl
       package:
@@ -15,7 +19,13 @@
       args:
         creates: /usr/local/bin/ollama  # предотвращает повторную установку
 
-    - name: Run Ollama with llama2
-      shell: ollama run llama2:latest
-      async: 45  # запуск в асинхронном режиме
-      poll: 0    # не ждать завершения
+    - name: Pull llama2
+      shell: ollama pull llama2:latest
+
+    - name: Run Ollama service
+      shell: service ollama start
+
+    # - name: Run Ollama with llama2
+    #   shell: ollama run llama3.2:1b
+    #   async: 45  # запуск в асинхронном режиме
+    #   poll: 0    # не ждать завершения
