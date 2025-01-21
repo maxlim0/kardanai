@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 # Configuration parameters
 
 # Configuration parameters
-BASE_INPUT_PATH = "data/processed/ukr_laws/"  # Base path for input files
-BASE_OUTPUT_PATH = "data/processed/summarized"  # Base path for output files
+BASE_INPUT_PATH = "data-test/processed/ukr_laws/"  # Base path for input files
+BASE_OUTPUT_PATH = "data-test/processed/summarized"  # Base path for output files
 CONTEXT_WINDOW = 4000  # Context window size in tokens
 CHUNK_OVERLAP = 100  # Overlap between chunks
 
@@ -74,10 +74,7 @@ def process_document(doc) -> str:
         summaries.append(summary)
     
     # Combine summaries if needed
-    final_text = "\n\n".join(summaries)
-    # if len(final_text) > CONTEXT_WINDOW:
-    #     final_text = summarize_text(final_text)
-    
+    final_text = "\n\n".join(summaries)    
     return final_text
 
 def main():
