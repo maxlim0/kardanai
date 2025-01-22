@@ -1,7 +1,7 @@
 
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core.node_parser import TokenTextSplitter
+from llama_index.core.node_parser import TokenTextSplitter, SentenceSplitter
 from llama_index.core import Settings, SimpleDirectoryReader
 from llama_index.core.llms import ChatMessage
 from pathlib import Path
@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 # Configuration parameters
 BASE_INPUT_PATH = "data-test/processed/ukr_laws/"  # Base path for input files
 BASE_OUTPUT_PATH = "data-test/processed/summarization"  # Base path for output files
-CONTEXT_WINDOW = 4000  # Context window size in tokens
-CHUNK_OVERLAP = 100  # Overlap between chunks
+CONTEXT_WINDOW = 500  # Context window size in tokens
+CHUNK_OVERLAP = 30  # Overlap between chunks
 
 #LLM_MODEL = "qwq:32b"
 #LLM_MODEL = "phi4:14b-q8_0"
@@ -38,9 +38,10 @@ Settings.embed_model = HuggingFaceEmbedding(
     model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
 
-Settings.text_splitter = TokenTextSplitter(
+Settings.text_splitter = SentenceSplitter(
     chunk_size=CONTEXT_WINDOW,
-    chunk_overlap=CHUNK_OVERLAP
+    chunk_overlap=CHUNK_OVERLAP,
+    paragraph_separator='Стаття'
 )
 
 def get_output_path(input_file_path: str) -> Path:
@@ -68,6 +69,9 @@ def process_document(doc) -> str:
     summaries = []
     
     for chunk in chunks:
+        print("=================================")
+        print(f"Original CHUNK: " + chunk)
+        print("=================================")
         summary = summarize_text(chunk)
         print(summary)
         summaries.append(summary)
@@ -75,6 +79,13 @@ def process_document(doc) -> str:
     # Combine summaries if needed
     final_text = "\n\n".join(summaries)    
     return final_text
+
+import tiktoken
+def estimate_tokens(text):
+    encoding = tiktoken.get_encoding("cl100k_base")
+    toneks_count = len(encoding.encode(text))
+    print(f"Document rough tokens estimate: {toneks_count}")
+    return toneks_count
 
 def main():
     """Main function to process all files."""
@@ -97,6 +108,9 @@ def main():
                     logger.warning(f"No content found in {input_file_path}")
                     continue
                 
+                estimate_tokens(documents[0].text)
+                break
+
                 # Process and summarize
                 summarized_text = process_document(documents[0])
                 
