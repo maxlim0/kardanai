@@ -109,7 +109,6 @@ def main():
                     continue
                 
                 estimate_tokens(documents[0].text)
-                break
 
                 # Process and summarize
                 summarized_text = process_document(documents[0])

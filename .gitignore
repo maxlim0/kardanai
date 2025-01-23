@@ -1,2 +1,3 @@
 data/*
 poetry.lock
+config.py
