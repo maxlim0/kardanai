@@ -1,5 +1,5 @@
 def get_ollama():
   pass
 
-def get_antropik():
+def get_antropic():
   pass

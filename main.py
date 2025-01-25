@@ -1,127 +1,54 @@
-
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core.node_parser import TokenTextSplitter, SentenceSplitter
-from llama_index.core import Settings, SimpleDirectoryReader
-from llama_index.core.llms import ChatMessage
+from doc_processor import DocumentProcessor
+from odm.structure import Chunk
+from odm.helper import create_constitution, init_db
+import config
+import asyncio
 from pathlib import Path
-import os
-import logging
+from document_export import export_variant
 import prompt
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-# Configuration parameters
 
-# Configuration parameters
-BASE_INPUT_PATH = "data-test/processed/ukr_laws/"  # Base path for input files
-BASE_OUTPUT_PATH = "data-test/processed/summarization"  # Base path for output files
-CONTEXT_WINDOW = 500  # Context window size in tokens
-CHUNK_OVERLAP = 30  # Overlap between chunks
 
-#LLM_MODEL = "qwq:32b"
-#LLM_MODEL = "phi4:14b-q8_0"
-LLM_MODEL= "qwen2.5:7b-instruct-fp16"
-#LLM_MODEL = "deepseek-r1:32b"
+async def main():
+    await init_db()
+    processor = DocumentProcessor()
 
-# Configure LlamaIndex settings
-Settings.llm = Ollama(
-    model=LLM_MODEL,
-    base_url="http://localhost:11434",
-    temperature=0.4,
-    request_timeout=60000
-)
+    data_source_dir = Path(config.DATA_SOURCE_DIR)
+    if data_source_dir.exists() and data_source_dir.is_dir():
+        txt_files = list(data_source_dir.glob("*.txt"))
+        if txt_files:
+            print("Найдены следующие файлы для обработки: ")
 
-Settings.embed_model = HuggingFaceEmbedding(
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-)
+            # Загружаем и разбиваем документы
+            result_arr = processor.load_and_split_documents(directory_path=config.DATA_SOURCE_DIR)
+            for doc in result_arr:
+                await create_constitution(file_name=doc["metadata_file_name"], size=doc["metadata_file_size"], 
+                                        original_text=[Chunk(text=chunk) for chunk in doc["chunks"]])
+        else:
+            print("ТХТ файлы не найдены")
+    else:
+        print("Source директории не существует")
 
-Settings.text_splitter = SentenceSplitter(
-    chunk_size=CONTEXT_WINDOW,
-    chunk_overlap=CHUNK_OVERLAP,
-    paragraph_separator='Стаття'
-)
+    # СРОЧНО добавить запись одного ответа сразу в мого, а то может не сохраниться
+    await processor.process_chunks(
+        chunk_process_limit=1,
+        llm_provider="Anthropic",
+        file_name="constitution-uk.txt",
+        llm_model="claude-3-sonnet-20240229",
+        llm_prompt=prompt.prompt_ukr_lawer
+    )
 
-def get_output_path(input_file_path: str) -> Path:
-    """Generate output path maintaining the same structure as input."""
-    relative_path = os.path.relpath(input_file_path, BASE_INPUT_PATH)
-    output_path = Path(BASE_OUTPUT_PATH) / relative_path
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    return output_path
+    #await export_variant()
 
-def summarize_text(text: str) -> str:
-    """Summarize text using Ollama."""
-    response = Settings.llm.chat([
-        ChatMessage(role="system", content=prompt.prompt_ukr_lawer), 
-                                 ChatMessage(role="user", content=text)
-                                             ])
-    return response.message.content
-
-def process_document(doc) -> str:
-    """Process document by chunks if needed and summarize."""
-    if len(doc.text) <= CONTEXT_WINDOW:
-        return summarize_text(doc.text)
+    # await add_variant(
+    #     constitution_name=doc["metadata_file_name"],
+    #     llm_provider="llm_provider2",
+    #     llm_model="llm_model2",
+    #     llm_prompt="llm_prompt2",
+    #     llm_answers=[LLMAnswer(questionId="qwe", answer="qwe", llm_input_tokens=1, llm_output_tokens=2),
+    #                  LLMAnswer(questionId="qwe2", answer="qwe2", llm_input_tokens=3, llm_output_tokens=4)]
+        # )
     
-    # Split into chunks if document is too large
-    chunks = Settings.text_splitter.split_text(doc.text)
-    summaries = []
-    
-    for chunk in chunks:
-        print("=================================")
-        print(f"Original CHUNK: " + chunk)
-        print("=================================")
-        summary = summarize_text(chunk)
-        print(summary)
-        summaries.append(summary)
-    
-    # Combine summaries if needed
-    final_text = "\n\n".join(summaries)    
-    return final_text
-
-import tiktoken
-def estimate_tokens(text):
-    encoding = tiktoken.get_encoding("cl100k_base")
-    toneks_count = len(encoding.encode(text))
-    print(f"Document rough tokens estimate: {toneks_count}")
-    return toneks_count
-
-def main():
-    """Main function to process all files."""
-    # Walk through all files in input directory
-    for root, _, files in os.walk(BASE_INPUT_PATH):
-        for file in files:
-            if not file.endswith('.txt'):  # Adjust file extension as needed
-                continue
-                
-            input_file_path = os.path.join(root, file)
-            logger.info(f"Processing file: {input_file_path}")
-            
-            try:
-                # Load document
-                documents = SimpleDirectoryReader(
-                    input_files=[input_file_path]
-                ).load_data()
-                
-                if not documents:
-                    logger.warning(f"No content found in {input_file_path}")
-                    continue
-                
-                estimate_tokens(documents[0].text)
-
-                # Process and summarize
-                summarized_text = process_document(documents[0])
-                
-                # Save to output maintaining directory structure
-                output_path = get_output_path(input_file_path)
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    f.write(summarized_text)
-                
-                logger.info(f"Saved summary to: {output_path}")
-                
-            except Exception as e:
-                logger.error(f"Error processing {input_file_path}: {str(e)}")
-
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
