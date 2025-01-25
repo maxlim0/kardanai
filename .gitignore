@@ -1,6 +1,6 @@
 data/
 bak/
 *.pyc
-__pycache__/
+**/__pycache__/
 poetry.lock
 config.py
