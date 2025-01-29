@@ -4,4 +4,5 @@ bak/
 **/__pycache__/
 poetry.lock
 config.py
-.DS_Store
+*.DS_Store
+*.bak

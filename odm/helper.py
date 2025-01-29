@@ -1,5 +1,5 @@
 from typing import List
-from beanie import Document, Indexed, init_beanie
+from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 import config
 from odm.structure import Constitution, Variant, LLMAnswer, Chunk

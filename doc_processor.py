@@ -198,7 +198,9 @@ class DocumentProcessor:
 
 
             print(f"Чанков будет обработанно {len(unprocessed_chunks)} chunks")
+            chunk_process_count = 1
             for chunk in unprocessed_chunks:
+                print(f"Processing chunk: {chunk_process_count}")
                 try:
                     #Отправляем запрос в Anthropic
                     response = await self._rate_limited_llm_call(chunk)
@@ -213,9 +215,11 @@ class DocumentProcessor:
                     document.variants[variant_index].llm_answers.append(llm_answer)
                     chunk.processed = True
 
+                    await document.save()
+                    chunk_process_count += 1
+
                 except Exception as e:
                     print(f"Error processing chunk: {e}")
                     continue
 
-            await document.save()
             print(f"Document {document.file_name} has been saved")
