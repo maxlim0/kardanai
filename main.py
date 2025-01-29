@@ -29,9 +29,12 @@ async def main():
 
     await processor.process_chunks(
         chunk_process_limit=999,
-        llm_provider="Anthropic",
+        #llm_provider="Anthropic",
+        #llm_model="claude-3-sonnet-20240229",
+
+        llm_provider="Ollama",
+        llm_model="qwen2.5_7b-instruct-fp16",
         file_name="constitution-ru.txt",
-        llm_model="claude-3-sonnet-20240229",
         llm_prompt=prompt.prompt_ru_man_low_worker
     )
 

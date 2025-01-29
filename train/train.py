@@ -93,7 +93,7 @@ async def start_train():
     print(f"Обьеденненный dataset: {len(dataset)}")
 
     # Разделение на train/test
-    train_dataset, valid_dataset = dataset.train_test_split(test_size=0.2, seed=42).values()
+    train_dataset, valid_dataset = dataset.train_test_split(test_size=0.1, seed=42).values()
     print(train_dataset)
 
 
@@ -164,7 +164,7 @@ async def start_train():
         fp16=False,                            # Использование 16-битной точности
         warmup_ratio=0.1,                      # 0.1 =  10% # Количество шагов для разогрева learning rate
         save_total_limit=3,                    # Максимальное количество сохраняемых чекпоинтов
-        logging_dir="model/logs",
+        logging_dir="data/export/model/logs",
         report_to=["tensorboard"],
         do_train=True,
         do_eval=True,
@@ -204,7 +204,7 @@ async def start_train():
     trainer.train()
 
     #Сохранение адаптера
-    model.save_pretrained("model")
+    model.save_pretrained("data/export/model")
 
     # print("Настройки токенизатора:")
     # print(f"padding_side: {tokenizer.padding_side}")

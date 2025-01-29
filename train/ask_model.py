@@ -11,7 +11,7 @@ model = AutoModelForCausalLM.from_pretrained(base_model_path)
 tokenizer = AutoTokenizer.from_pretrained(base_model_path)
 
 # Применение LoRA-адаптера к модели
-#model = PeftModel.from_pretrained(model, lora_model_path)
+model = PeftModel.from_pretrained(model, lora_model_path)
 
 # Функция генерации ответа
 def generate_answer(question):

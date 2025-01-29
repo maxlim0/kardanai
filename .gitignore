@@ -6,3 +6,4 @@ poetry.lock
 config.py
 *.DS_Store
 *.bak
+model/

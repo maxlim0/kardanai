@@ -12,6 +12,6 @@ mkdir -p /etc/ansible
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
 
 git clone https://github.com/maxlim0/kardanai.git $PROJECT_DIR
-cd $PROJECT_DIR
+cd $PROJECT_DIR/deploy
 
 ansible-playbook ansible.yml

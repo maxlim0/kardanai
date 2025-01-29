@@ -34,8 +34,7 @@ async def export_variant(output_directory: str = "data/export"):
     
     # Получаем все документы где original_text полностью обработан
     documents = await Constitution.find(
-        {"original_text": {"$not": {"$elemMatch": {"processed": False}}}}
-    ).to_list()
+        {"original_text": {"$not": {"$elemMatch": {"processed": False}}}}).to_list()
     
     if not documents:
         print("Нет полностью обработанных документов для экспорта")

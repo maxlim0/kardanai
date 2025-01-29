@@ -7,6 +7,7 @@ from pathlib import Path
 import prompt
 import asyncio
 import config
+from llama_index.llms.ollama import Ollama
 
 from typing import Optional
 from llama_index.core import Settings
@@ -146,7 +147,16 @@ class DocumentProcessor:
                             llm_prompt: str, chunk_process_limit: Optional[int] = None):
         
 
-        Settings.llm = Anthropic(model=llm_model,api_key=config.ANTHROPIC_API_KEY, max_tokens=3000)
+        #LLM_MODEL = "qwq:32b"
+        #LLM_MODEL = "phi4:14b-q8_0"
+        LLM_MODEL= "qwen2.5:7b-instruct-fp16"
+        #LLM_MODEL = "deepseek-r1:32b"
+
+
+        #Settings.llm = Anthropic(model=llm_model,api_key=config.ANTHROPIC_API_KEY, max_tokens=3000)
+        Settings.llm = Ollama(model=LLM_MODEL, base_url="http://localhost:11434", temperature=0.4, request_timeout=60000
+)
+
 
         documents = await Constitution.find(
             {
@@ -204,12 +214,15 @@ class DocumentProcessor:
                 try:
                     #Отправляем запрос в Anthropic
                     response = await self._rate_limited_llm_call(chunk)
+                    print(response)
 
                     llm_answer = LLMAnswer(
                         questionId=str(chunk.id),
                         answer=response.message.blocks[0].text,
-                        llm_input_tokens=response.raw["usage"].input_tokens,
-                        llm_output_tokens=response.raw["usage"].output_tokens
+                        llm_input_tokens=getattr(response.raw.get("usage", {}), "input_tokens", 0),
+                        llm_output_tokens=getattr(response.raw.get("usage", {}), "output_tokens", 0),
+                        #llm_output_tokens=response.raw["usage"].output_tokens
+
                     )
 
                     document.variants[variant_index].llm_answers.append(llm_answer)
