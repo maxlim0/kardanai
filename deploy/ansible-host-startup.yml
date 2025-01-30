@@ -37,7 +37,7 @@
         creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
 
     - name: Add Nvidia repository
-      ansible.builtin.template:
+      ansible.builtin.copy:
         dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
         mode: '0644'
         content: |
