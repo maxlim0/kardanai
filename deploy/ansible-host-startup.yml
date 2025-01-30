@@ -43,12 +43,12 @@
         content: |
           deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/ /
 
-    - name: Install Docker
+    - name: nvidia-container-toolkit
       apt:
         name:
           - nvidia-container-toolkit
         state: present
-        update_cahce: yes
+        update_cache: yes
 
     - name: NVIDIA Container Toolkit Docker
       command: nvidia-ctk runtime configure --runtime=docker
