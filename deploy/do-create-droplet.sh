@@ -27,7 +27,7 @@ while true; do
     echo -ne "\rWaiting for host: $((++count)) sec for $timeout"
     sleep 1
 done
-c
+
 PROJECT_DIR="/app"
 
 # # copy docker hub pwd

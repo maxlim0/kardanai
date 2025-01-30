@@ -17,7 +17,23 @@
           - ca-certificates
           - curl
           - software-properties-common
+          - nvidia-container-toolkit
         state: present
+
+    - name: Настройка NVIDIA Container Toolkit для Docker
+      hosts: your_servers
+      tasks:
+        - name: Выполнить настройку nvidia-ctk
+          command: nvidia-ctk runtime configure --runtime=docker
+          become: yes 
+
+    - name: nvidia-ctk runtime status
+      command: nvidia-ctk runtime status
+      register: nvidia_status
+    
+    - name: nvidia_status
+      debug:
+        var: nvidia_status.stdout_lines
 
     - name: Add Docker GPG key
       apt_key:
@@ -69,3 +85,13 @@
         volumes:
           - "{{ PROJECT_DIR }}:/app"
         state: started
+        device_requests:
+          - capabilities: [["gpu"]]  # Эквивалент --gpus all
+        ipc_mode: host               # Эквивалент --ipc=host
+        ulimits:
+          - name: memlock
+            soft: -1
+            hard: -1
+          - name: stack
+            soft: 67108864
+            hard: 67108864

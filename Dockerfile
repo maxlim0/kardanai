@@ -1,10 +1,14 @@
 ARG TARGETPLATFORM=linux/amd64
-FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+FROM python:3.10.16-slim
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 COPY . .
 VOLUME /app/data/model
-RUN sh deploy/do-startup.sh && chmod +x deploy/entrypoint.sh
+RUN sh deploy/do-startup-dockerfile.sh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /root/.cache/
+RUN chmod +x deploy/entrypoint.sh
 ENTRYPOINT ["deploy/entrypoint.sh"]
 
 # apt-get install nvidia-container-toolkit
@@ -14,3 +18,9 @@ ENTRYPOINT ["deploy/entrypoint.sh"]
 # DOCKER_BUILDKIT=1 docker build -t maxsolyaris/kardanai:latest .
 # DOCKER_BUILDKIT=1 docker build --platform linux/amd64 .
 # docker build -t maxsolyaris/kardanai:latest .
+
+
+# multi plarform
+# docker buildx build --platform linux/amd64,linux/arm64 \
+#   -t maxsolyaris/kardanai:latest \
+#   --push .

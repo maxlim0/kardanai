@@ -18,14 +18,9 @@
           - build-essential
           - llvm-14
           - llvm-14-dev
-          - git
+          - python3-venv
         state: present
-        update_cache: yes
 
-    - name: Verify Python version
-      command: python3 --version
-      register: python_version
-      changed_when: false
 
     - name: Display Python version
       debug:
@@ -58,13 +53,14 @@
         export PATH="/root/.local/bin:$PATH"
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
+        poetry config virtualenvs.path "/root/.venv"
       environment:
         PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
 
     - name: Install project dependencies
       shell: |
         export PATH="/root/.local/bin:$PATH"
-        poetry install --no-interaction
+        poetry install --no-interaction --no-cache
       args:
         chdir: "{{ PROJECT_DIR }}"
       environment:
