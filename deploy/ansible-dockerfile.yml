@@ -14,17 +14,51 @@
     - name: Install required packages
       package:
         name: 
-          - curl
           - build-essential
           - llvm-14
           - llvm-14-dev
           - python3-venv
+          - git
         state: present
 
+    - name: Install Python and pipx
+      apt:
+        name: 
+          - python3
+          - python3-pip
+          - python3-venv
+          - pipx
+        state: present
 
-    - name: Display Python version
-      debug:
-        var: python_version.stdout
+    - name: Add pipx to PATH
+      ansible.builtin.shell: pipx ensurepath
+      args:
+        executable: /bin/bash
+        creates: "{{ ansible_env.HOME }}/.local/bin/poetry"
+
+    - name: Install Poetry
+      ansible.builtin.shell: pipx install poetry
+      args:
+        executable: /bin/bash
+        creates: "{{ ansible_env.HOME }}/.local/bin/poetry"
+
+    - name: Source bashrc
+      ansible.builtin.shell: source ~/.bashrc
+      args:
+        executable: /bin/bash
+
+    - name: Add Poetry to PATH for current session
+      ansible.builtin.shell: |
+        export PATH="/root/.local/bin:$PATH"
+        poetry install
+      args:
+        chdir: "{{ PROJECT_DIR }}"
+        executable: /bin/bash
+
+    - name: Install project dependencies with Poetry
+      ansible.builtin.shell: poetry install
+      args:
+        chdir: "{{ PROJECT_DIR }}"
 
     - name: Mkdir for app
       file:
@@ -35,12 +69,6 @@
     - name: Set LLVM 14 as default
       shell: |
         update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-14 100
-
-    - name: Install Poetry
-      shell: |
-        curl -sSL https://install.python-poetry.org | python3 -
-      environment:
-        PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
 
     - name: Add Poetry to PATH
       lineinfile:

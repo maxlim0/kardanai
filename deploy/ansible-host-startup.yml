@@ -20,10 +20,10 @@
           - nvidia-container-toolkit
         state: present
 
-    - name: Настройка NVIDIA Container Toolkit для Docker
+    - name: NVIDIA Container Toolkit Docker
       hosts: your_servers
       tasks:
-        - name: Выполнить настройку nvidia-ctk
+        - name: nvidia-ctk
           command: nvidia-ctk runtime configure --runtime=docker
           become: yes 
 
