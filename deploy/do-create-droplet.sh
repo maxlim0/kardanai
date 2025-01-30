@@ -10,23 +10,29 @@ doctl compute droplet create \
 count=0
 timeout=90
 
-while ! doctl compute d list | awk 'NR > 1 {print $3}'; do
-   if [ $count -ge $timeout ]; then
-       echo -e "\rHost timeout ($timeout sec). Exit."
-       exit 1
-   fi
-   echo -ne "\rWaiting for host: $((++count)) sec for $timeout"
-   sleep 1
+while true; do
+    ip=$(doctl compute d list | awk 'NR > 1 {print $3}')
+    # Проверяем, что строка похожа на IP-адрес с помощью регулярного выражения
+    if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo -e "\rHost created! IP: $ip"
+        break
+    fi
+    
+    if [ $count -ge $timeout ]; then
+        echo -e "\rHost timeout ($timeout sec). Exit."
+        exit 1
+    fi
+    
+    echo -ne "\rWaiting for host: $((++count)) sec for $timeout"
+    sleep 1
 done
 
-echo -e "\rHost created!"
-
-sleep 20
+PROJECT_DIR="/app"
 
 # # copy docker hub pwd
-ssh -i ~/.ssh/id_rsa_MacBookHoleGithub root@(doctl compute d list | awk 'NR > 1 {print $3}') "mkdir -p /app/data"
+ssh -i ~/.ssh/id_rsa_MacBookHoleGithub root@$(doctl compute d list | awk 'NR > 1 {print $3}') "mkdir -p /app/data/config"
 scp -r -i ~/.ssh/id_rsa_MacBookHoleGithub -o StrictHostKeyChecking=no \
-    data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/data/config/ 
+    /Users/max/PycharmProjects/Topic/data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/data/config/ 
 #    config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
 
 

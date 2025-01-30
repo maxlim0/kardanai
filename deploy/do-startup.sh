@@ -26,10 +26,8 @@ chmod 666 /var/log/ansible.log
 
 if [ "$(hostname)" != "hole.local"]; then
     git clone https://github.com/maxlim0/kardanai.git $PROJECT_DIR
-    ansible-playbook deploy/ansible-host-startup.yml
+    ansible-playbook deploy/ansible-dockerfile.yml 
+
 else
-   ansible-playbook deploy/ansible-dockerfile.yml 
+    ansible-playbook deploy/ansible-host-startup.yml
 fi
-
-
-
