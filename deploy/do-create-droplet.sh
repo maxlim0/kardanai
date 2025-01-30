@@ -27,13 +27,13 @@ while true; do
     echo -ne "\rWaiting for host: $((++count)) sec for $timeout"
     sleep 1
 done
-
+c
 PROJECT_DIR="/app"
 
 # # copy docker hub pwd
 ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_MacBookHoleGithub root@$(doctl compute d list | awk 'NR > 1 {print $3}') "mkdir -p /tmp/app/data/config"
 scp -r -i ~/.ssh/id_rsa_MacBookHoleGithub -o StrictHostKeyChecking=no \
-    /Users/max/PycharmProjects/Topic/data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):/tmp/$PROJECT_DIR/data/config/ 
+    /Users/max/PycharmProjects/Topic/data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):/tmp/$PROJECT_DIR/data/
 #    config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
 
 
