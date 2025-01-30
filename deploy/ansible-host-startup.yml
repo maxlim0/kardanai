@@ -7,7 +7,7 @@
     PROJECT_DIR: "/app"
     DOCKER_IMAGE: "maxsolyaris/kardanai:latest"
   vars_files:
-    - "{{ PROJECT_DIR }}/data/confg/ansible/vars.yml"
+    - "/tmp/{{ PROJECT_DIR }}/data/confg/ansible/vars.yml"
 
   tasks:
     - name: Install required packages
@@ -61,12 +61,6 @@
         name: "{{ DOCKER_IMAGE }}"
         source: pull
         force_source: yes
-
-    - name: Mkdir for app
-      file:
-        path: "{{ PROJECT_DIR }}"
-        state: directory
-        mode: '0755'
 
     - name: Run container
       docker_container:
