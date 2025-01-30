@@ -1,6 +1,9 @@
 from qa_dataset_loader import constitution_load_dataset
 from original_dataset_loader import export_ru_original
 from datasets import Dataset, concatenate_datasets
+import config
+import asyncio
+from huggingface_hub import login
 
 from transformers import (
     AutoModelForCausalLM,
@@ -9,6 +12,7 @@ from transformers import (
     Trainer,
     DataCollatorForLanguageModeling,
 )
+
 from peft import (
     prepare_model_for_kbit_training,
     LoraConfig,
@@ -18,10 +22,7 @@ from peft import (
 async def start_train():
     # Инициализация модели и токенизатора
     model_id = "meta-llama/Llama-3.2-1B"
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_id,
-        use_fast=True,
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True,)
 
     # # Открываем файл для записи
     # with open("vocab.txt", "w", encoding="utf-8") as file:
@@ -150,7 +151,7 @@ async def start_train():
 
     # Настройка параметров обучения
     training_args = TrainingArguments(
-        output_dir="model/llama_lora_output",  # Директория для сохранения модели и логов
+        output_dir="data/model/llama_lora_output",  # Директория для сохранения модели и логов
         num_train_epochs=4,                   # Количество эпох обучения
         per_device_train_batch_size=8,         # Размер батча для обучения на одном устройстве
         per_device_eval_batch_size=4,          # Размер батча для валидации на одном устройстве  
@@ -164,7 +165,7 @@ async def start_train():
         fp16=False,                            # Использование 16-битной точности
         warmup_ratio=0.1,                      # 0.1 =  10% # Количество шагов для разогрева learning rate
         save_total_limit=3,                    # Максимальное количество сохраняемых чекпоинтов
-        logging_dir="data/export/model/logs",
+        logging_dir="data/model/logs",
         report_to=["tensorboard"],
         do_train=True,
         do_eval=True,
@@ -211,10 +212,7 @@ async def start_train():
     # print(f"pad_token: {tokenizer.pad_token}")
     # print(f"pad_token_id: {tokenizer.pad_token_id}")
 
-
-
-import asyncio
-
 async def main():
+    login(token=config.HF_TOKEN)
     await start_train()
 asyncio.run(main())

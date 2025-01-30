@@ -1,0 +1,9 @@
+poetry.lock
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+data/model
+data/processed
+data/raw
+.vscode/

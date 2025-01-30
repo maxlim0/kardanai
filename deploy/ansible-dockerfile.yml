@@ -1,0 +1,89 @@
+---
+- name: Local Machine Setup
+  hosts: localhost
+  connection: local
+
+  vars:
+    PROJECT_DIR: "/app"
+
+  pre_tasks:
+    - name: Wait for apt lock release
+      shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 1; done
+
+  tasks:
+    - name: Install required packages
+      package:
+        name: 
+          - curl
+          - build-essential
+          - llvm-14
+          - llvm-14-dev
+          - git
+        state: present
+        update_cache: yes
+
+    - name: Verify Python version
+      command: python3 --version
+      register: python_version
+      changed_when: false
+
+    - name: Display Python version
+      debug:
+        var: python_version.stdout
+
+    - name: Mkdir for app
+      file:
+        path: "{{ PROJECT_DIR }}/data/model"
+        state: directory
+        mode: '0755'
+
+    - name: Set LLVM 14 as default
+      shell: |
+        update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-14 100
+
+    - name: Install Poetry
+      shell: |
+        curl -sSL https://install.python-poetry.org | python3 -
+      environment:
+        PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+
+    - name: Add Poetry to PATH
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH="/root/.local/bin:$PATH"'
+        create: yes
+
+    - name: Configure Poetry
+      shell: |
+        export PATH="/root/.local/bin:$PATH"
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+      environment:
+        PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+
+    - name: Install project dependencies
+      shell: |
+        export PATH="/root/.local/bin:$PATH"
+        poetry install --no-interaction
+      args:
+        chdir: "{{ PROJECT_DIR }}"
+      environment:
+        PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+        POETRY_VIRTUALENVS_CREATE: true
+        POETRY_VIRTUALENVS_IN_PROJECT: true
+
+    # - name: Install Ollama
+    #   shell: curl -fsSL https://ollama.com/install.sh | sh
+    #   args:
+    #     creates: /usr/local/bin/ollama
+
+    # - name: Run Ollama service
+    #   shell: service ollama start
+    #   ignore_errors: yes
+
+    # - name: Pull llama model
+    #   shell: |
+    #     export HOME=/root
+    #     ollama pull llama3.2:1b
+    #   environment:
+    #     HOME: /root

@@ -1,0 +1,46 @@
+---
+- name: Local Machine Setup
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    PROJECT_DIR: "/app"
+    DOCKER_IMAGE: "maxsolyaris/kardanai:latest"
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Install required packages (Ubuntu)
+      apt:
+        name: 
+          - python3-pip
+          - python3-docker
+          - python3-docker.io
+        state: present
+        update_cache: yes
+      become: true
+
+    - name: Log in to DockerHub
+      docker_login:
+        username: "{{ dockerhub_username }}"
+        password: "{{ dockerhub_password }}"
+        
+    - name: Pull private image
+      docker_image:
+        name: "{{ DOCKER_IMAGE }}"
+        source: pull
+        force_source: yes
+
+    - name: Mkdir for app
+      file:
+        path: "{{ PROJECT_DIR }}"
+        state: directory
+        mode: '0755'
+
+    - name: Run container
+      docker_container:
+        name: train
+        image: "{{ DOCKER_IMAGE }}"
+        volumes:
+          - "{{ PROJECT_DIR }}:/app"
+        state: started

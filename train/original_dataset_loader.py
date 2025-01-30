@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/Users/max/PycharmProjects/Topic")
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from odm.structure import Constitution
 import asyncio
 from pathlib import Path
