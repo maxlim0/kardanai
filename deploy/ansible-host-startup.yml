@@ -43,6 +43,16 @@
         content: |
           deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/ /
 
+    - name: Install Docker
+      apt:
+        name:
+          - nvidia-container-toolkit
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cahce: yes
+
     - name: NVIDIA Container Toolkit Docker
       command: nvidia-ctk runtime configure --runtime=docker
 
@@ -63,17 +73,6 @@
       apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
-
-    - name: Install Docker
-      apt:
-        name:
-          - nvidia-container-toolkit
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-        state: present
-        update_cahce: yes
-
 
     - name: Start Docker service
       service:
