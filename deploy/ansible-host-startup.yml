@@ -47,9 +47,6 @@
       apt:
         name:
           - nvidia-container-toolkit
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
         state: present
         update_cahce: yes
 
@@ -74,18 +71,21 @@
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
 
+    - name: Install required packages python3-pip
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - python3-pip
+          - python3-docker
+        state: present
+
     - name: Start Docker service
       service:
         name: docker
         state: started
         enabled: yes
-
-    - name: Install required packages python3-pip
-      apt:
-        name: 
-          - python3-pip
-          - python3-docker
-        state: present
 
     - name: Log in to DockerHub
       docker_login:
