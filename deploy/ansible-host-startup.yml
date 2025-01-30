@@ -59,7 +59,7 @@
         state: started
         enabled: yes
 
-    - name: Install required packages (Ubuntu)
+    - name: Install required packages python3-pip
       apt:
         name: 
           - python3-pip
