@@ -21,9 +21,7 @@
         state: present
 
     - name: NVIDIA Container Toolkit Docker
-      tasks:
-        - name: nvidia-ctk
-          command: nvidia-ctk runtime configure --runtime=docker
+      command: nvidia-ctk runtime configure --runtime=docker
 
     - name: nvidia-ctk runtime status
       command: nvidia-ctk runtime status
