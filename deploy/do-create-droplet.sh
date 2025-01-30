@@ -20,3 +20,6 @@ while ! doctl compute d list | awk 'NR > 1 {print $3}'; do
 done
 
 echo -e "\rHost created!"
+
+
+# doctl compute d list | awk 'NR > 1 {print $3}'

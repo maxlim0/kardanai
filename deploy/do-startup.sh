@@ -12,15 +12,26 @@ apt-get install -y ansible git
 mkdir -p /etc/ansible
 
 # Создание inventory файла
-echo "localhost ansible_connection=local" > /etc/ansible/hosts
+echo "localhost ansible_connection=local" >c
+
+# Создание ansible.cfg с настройками логирования
+cat << EOF > /etc/ansible/ansible.cfg
+[defaults]
+log_path = /var/log/ansible.log
+EOF
+
+# Создание директории для логов и установка прав
+touch /var/log/ansible.log
+chmod 666 /var/log/ansible.log
 
 git clone https://github.com/maxlim0/kardanai.git $PROJECT_DIR
 cd $PROJECT_DIR/deploy
 
+# # copy dataset and config.py
+scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+    data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/data/config/ \
+#    config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
+
 ansible-playbook ansible-host-startup.yml
 
 
-# # copy dataset and config.py
-# scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-#     data/export root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/deploy/ \
-#     config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
