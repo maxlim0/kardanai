@@ -1,5 +1,5 @@
 doctl compute droplet create \
-    --image ubuntu-24-10-x64 \
+    --image ubuntu-24-04-x64 \
     --size s-2vcpu-4gb \
     --region fra1 \
     --user-data-file do-startup.sh \
@@ -20,6 +20,14 @@ while ! doctl compute d list | awk 'NR > 1 {print $3}'; do
 done
 
 echo -e "\rHost created!"
+
+sleep 20
+
+# # copy docker hub pwd
+ssh -i ~/.ssh/id_rsa_MacBookHoleGithub root@(doctl compute d list | awk 'NR > 1 {print $3}') "mkdir -p /app/data"
+scp -r -i ~/.ssh/id_rsa_MacBookHoleGithub -o StrictHostKeyChecking=no \
+    data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/data/config/ 
+#    config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
 
 
 # doctl compute d list | awk 'NR > 1 {print $3}'

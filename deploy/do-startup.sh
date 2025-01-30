@@ -24,14 +24,12 @@ EOF
 touch /var/log/ansible.log
 chmod 666 /var/log/ansible.log
 
-git clone https://github.com/maxlim0/kardanai.git $PROJECT_DIR
-cd $PROJECT_DIR/deploy
+if [ "$(hostname)" != "hole.local"]; then
+    git clone https://github.com/maxlim0/kardanai.git $PROJECT_DIR
+    ansible-playbook deploy/ansible-host-startup.yml
+else
+   ansible-playbook deploy/ansible-dockerfile.yml 
+fi
 
-# # copy dataset and config.py
-scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-    data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/data/config/ \
-#    config.py root@$(doctl compute d list | awk 'NR > 1 {print $3}'):$PROJECT_DIR/
-
-ansible-playbook ansible-host-startup.yml
 
 

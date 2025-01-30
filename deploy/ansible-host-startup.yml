@@ -7,7 +7,7 @@
     PROJECT_DIR: "/app"
     DOCKER_IMAGE: "maxsolyaris/kardanai:latest"
   vars_files:
-    - vars.yml
+    - "{{ PROJECT_DIR }}/data/confg/ansible/vars.yml"
 
   tasks:
     - name: Run the equivalent of "apt-get update"
@@ -23,7 +23,6 @@
           - curl
           - software-properties-common
         state: present
-        update_cache: yes
 
     - name: Add Docker GPG key
       apt_key:
@@ -42,7 +41,6 @@
           - docker-ce-cli
           - containerd.io
         state: present
-        update_cache: yes
 
     - name: Start Docker service
       service:
@@ -50,19 +48,12 @@
         state: started
         enabled: yes
 
-    - name: Add user to docker group
-      user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: yes
-
     - name: Install required packages (Ubuntu)
       apt:
         name: 
           - python3-pip
           - python3-docker
         state: present
-        update_cache: yes
       become: true
 
     - name: Log in to DockerHub
