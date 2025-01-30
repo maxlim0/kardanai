@@ -17,8 +17,31 @@
           - ca-certificates
           - curl
           - software-properties-common
-          - nvidia-container-toolkit
         state: present
+
+    - name: Create keyrings directory
+      file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download and add Nvidia GPG key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /tmp/nvidia.gpg
+        mode: '0644'
+
+    - name: Dearmor GPG key
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg /tmp/nvidia.gpg
+        creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+    - name: Add Nvidia repository
+      ansible.builtin.template:
+        dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        mode: '0644'
+        content: |
+          deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/ /
 
     - name: NVIDIA Container Toolkit Docker
       command: nvidia-ctk runtime configure --runtime=docker
@@ -44,10 +67,13 @@
     - name: Install Docker
       apt:
         name:
+          - nvidia-container-toolkit
           - docker-ce
           - docker-ce-cli
           - containerd.io
         state: present
+        update_cahce: yes
+
 
     - name: Start Docker service
       service:
