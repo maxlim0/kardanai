@@ -41,7 +41,7 @@ jobs:
           sudo mv doctl /usr/local/bin
 
       - name: Authenticate doctl
-        run: doctl auth init -t "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
+        run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
 
       - name: Create DigitalOcean Droplet
         run: |
