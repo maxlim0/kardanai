@@ -39,6 +39,7 @@ jobs:
       - name: Install doctl
         run: |
           curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
+          ls -la
           chmod +x doctl
           doctl version
   
