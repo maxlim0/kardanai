@@ -7,8 +7,10 @@ on:
 
 jobs:
   build-and-push:
+    if: false
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -36,10 +38,14 @@ jobs:
 
       - name: Install doctl
         run: |
+          whoami
           curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
           chmod +x doctl
           sudo mv doctl /usr/local/bin
-
+          echo $PATH
+          ls -la /usr/local/bin
+          doctl version
+  
       - name: Authenticate doctl
         run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
 
