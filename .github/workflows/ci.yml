@@ -40,9 +40,11 @@ jobs:
         run: |
           curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
           echo $PATH
+          ls -la
           mkdir -p ~/.local/bin
           mv doctl ~/.local/bin/
           chmod +x ~/.local/bin/doctl
+          ls -la ~/.local/bin
           doctl version
   
       - name: Authenticate doctl
