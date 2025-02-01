@@ -45,7 +45,7 @@ jobs:
           # mv doctl ~/.local/bin/
           # chmod +x ~/.local/bin/doctl
           # ls -la ~/.local/bin
-          snap install doctl
+          sudo snap install doctl
           doctl version
   
       - name: Authenticate doctl
