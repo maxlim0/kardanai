@@ -30,7 +30,7 @@ jobs:
 
   deploy-and-run:
     name: Deploy to DigitalOcean and Collect Logs
-    needs: build-and-push
+    #needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
