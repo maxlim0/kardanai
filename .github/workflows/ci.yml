@@ -38,15 +38,7 @@ jobs:
 
       - name: Install doctl
         run: |
-          # curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
-          # echo $PATH
-          # ls -la
-          # mkdir -p ~/.local/bin
-          # mv doctl ~/.local/bin/
-          # chmod +x ~/.local/bin/doctl
-          # ls -la ~/.local/bin
           sudo snap install doctl
-          doctl version
   
       - name: Authenticate doctl
         run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
@@ -58,7 +50,7 @@ jobs:
             --region fra1 \
             --image ubuntu-24-04-x64 \
             --size s-2vcpu-4gb \
-            --user-data-file do-startup.sh \
+            --user-data-file deploy/do-startup.sh \
             --ssh-keys "44677180" \
             --wait \
             --format ID \
