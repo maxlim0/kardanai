@@ -1,0 +1,88 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
+          docker build -t $IMAGE_NAME .
+      
+      - name: Push Docker Image to Docker Hub
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
+          docker push $IMAGE_NAME
+
+  deploy-and-run:
+    name: Deploy to DigitalOcean and Collect Logs
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        run: |
+          curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
+          chmod +x doctl
+          sudo mv doctl /usr/local/bin
+
+      - name: Authenticate doctl
+        run: doctl auth init -t "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
+
+      - name: Create DigitalOcean Droplet
+        run: |
+          DROPLET_NAME="ubuntu-s-2vcpu-4gb-fra1-01"
+          doctl compute droplet create "$DROPLET_NAME" \
+            --region fra1 \
+            --image ubuntu-24-04-x64 \
+            --size s-2vcpu-4gb \
+            --user-data-file do-startup.sh \
+            --ssh-keys "44677180" \
+            --wait \
+            --format ID \
+            --no-header > droplet_id.txt
+
+      - name: Wait for Docker Container to Finish and Collect Logs
+        run: |
+          DROPLET_ID=$(cat droplet_id.txt)
+          DROPLET_IP=$(doctl compute droplet get $DROPLET_ID --format PublicIPv4 --no-header)
+          
+          echo "Adding SSH key to agent"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          echo "Waiting for container to finish..."
+          while ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker ps --filter 'name=my-app' --format '{{.Names}}'" | grep -q "my-app"; do
+            echo "Container is still running..."
+            sleep 30
+          done
+
+          echo "Container finished, collecting logs..."
+          ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker logs my-app" > container_logs.txt
+
+      - name: Save Logs as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-logs
+          path: container_logs.txt
+
+      - name: Delete Droplet
+        run: |
+          DROPLET_ID=$(cat droplet_id.txt)
+          doctl compute droplet delete "$DROPLET_ID" --force
+  

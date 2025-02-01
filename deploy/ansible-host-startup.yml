@@ -63,10 +63,20 @@
         state: started
         enabled: yes
 
+    - name: Wait for Docker deamon to be ready 
+      wait_for:
+        path: /var/run/docker.sock
+        state: present
+        timeout: 60
+
     - name: Log in to DockerHub
       docker_login:
         username: "{{ dockerhub_username }}"
         password: "{{ dockerhub_password }}"
+      register: dockerhub_log_results
+      until: dockerhub_log_results is success
+      retries: 3
+      delay: 30
         
     - name: Pull private image
       docker_image:
@@ -82,7 +92,9 @@
           - "/in_container_app:/app/data/model"
         state: started
         device_requests:
-          - capabilities: [["gpu"]]
+          - driver: nvidia
+            count: -1  # -1 означает использование всех доступных GPU
+            capabilities: [gpu]
         ipc_mode: host
         ulimits:
           - "memlock:-1:-1"
