@@ -79,7 +79,7 @@
         name: train
         image: "{{ DOCKER_IMAGE }}"
         volumes:
-          - "/in_container_app:/app"
+          - "/in_container_app:/app/data/model"
         state: started
         device_requests:
           - capabilities: [["gpu"]]

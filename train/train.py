@@ -1,9 +1,10 @@
+import asyncio
 from qa_dataset_loader import constitution_load_dataset
 from original_dataset_loader import export_ru_original
 from datasets import Dataset, concatenate_datasets
-import config
-import asyncio
 from huggingface_hub import login
+from utils.save_model_artifact import upload_to_gcs
+from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN
 
 from transformers import (
     AutoModelForCausalLM,
@@ -207,12 +208,22 @@ async def start_train():
     #Сохранение адаптера
     model.save_pretrained("data/export/model")
 
+    upload_to_gcs(
+        GCP_BUCKET_MODEL_ARTIFACT,
+        "data/model/",  # Директория для загрузки
+        "model/"   # Имя папки в бакете
+    )
+
     # print("Настройки токенизатора:")
     # print(f"padding_side: {tokenizer.padding_side}")
     # print(f"pad_token: {tokenizer.pad_token}")
     # print(f"pad_token_id: {tokenizer.pad_token_id}")
 
+
+import os
 async def main():
-    login(token=config.HF_TOKEN)
+    login(token=HF_TOKEN)
     await start_train()
-asyncio.run(main())
+
+if __name__ == "__main__":
+    asyncio.run(main())

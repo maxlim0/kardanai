@@ -23,6 +23,7 @@ datasets = "^3.2.0"
 peft = "^0.14.0"
 torch-tb-profiler = "^0.4.3"
 deptry = "^0.23.0"
+google-cloud-storage = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core"]
