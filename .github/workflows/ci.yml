@@ -38,12 +38,8 @@ jobs:
 
       - name: Install doctl
         run: |
-          whoami
           curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m) -o doctl
           chmod +x doctl
-          sudo mv doctl /usr/local/bin
-          echo $PATH
-          ls -la /usr/local/bin
           doctl version
   
       - name: Authenticate doctl
