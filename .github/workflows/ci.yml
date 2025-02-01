@@ -42,6 +42,7 @@ jobs:
           echo $PATH
           mkdir -p ~/.local/bin
           mv doctl ~/.local/bin/
+          chmod +x ~/.local/bin/doctl
           doctl version
   
       - name: Authenticate doctl
