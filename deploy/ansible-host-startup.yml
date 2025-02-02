@@ -116,12 +116,12 @@
 
 
       always:
-        - name: Check Docker Container Status
-          shell: "docker inspect --format='{{.State.Status}}' train"
+        - name: Check if container has exited
+          shell: "docker ps -a --filter 'name=train' --filter 'status=exited' --format '{{ '{{' }}.ID{{ '}}' }}'"
           register: container_status
-          until: container_status.stdout.strip() == "exited"
           retries: 720
           delay: 5
+          until: container_status.stdout | length > 0
 
         - name: Collect Container Logs
           command: docker logs train
