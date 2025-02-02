@@ -45,11 +45,10 @@ while true; do
         echo "Startup script завершен"
         
         # Send status to GitHub Actions 
-        curl -X POST https://api.github.com/repos/&lt;username&gt;/&lt;repo&gt;/dispatches \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -u ${{ secrets.ACCESS_TOKEN }} \
-          --data '{"event_type": "cloud-init-status", "client_payload": { "status": "ready"}}'
-        
+        curl -X POST https://api.github.com/repos/maxsolyaris/kardanai/dispatches \
+            -H 'Accept: application/vnd.github.everest-preview+json' \
+            -u "${FLOW_CONTROL_GITHUB_TOKEN}" \
+            --data '{"event_type": "cloud-init-status", "client_payload": { "status": "ready"}}'
         break
     fi
     

@@ -10,6 +10,11 @@
     - "/tmp/{{ PROJECT_DIR }}/data/config/ansible/vars.yml"
 
   tasks:
+    - name: Run background script
+      shell: nohup {{ PROJECT_DIR }}/deploy/check_startup.sh > / {{ PROJECT_DIR }}/data/model/check_startup.log 2>&1 &
+      async: 1000
+      poll: 0
+
     - name: Install required packages
       apt:
         name:
