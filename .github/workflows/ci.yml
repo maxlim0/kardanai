@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - master
-  repository_dispatch:
-    types: [cloud-init-status, docker-container-status]  
 
 jobs:
   build-and-push:
