@@ -8,7 +8,7 @@
 SSH_USER="root"  # или ваш пользователь
 
 check_startup() {
-    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER$1 'cloud-init status')
+    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
         return 0  # скрипт завершен
     elif [[ $status == *"status: running"* ]]; then
@@ -17,6 +17,7 @@ check_startup() {
         echo "cloud-init завершился с ошибкой"
         return 2
     else
+        echo $status
         echo "cloud-init status UNKNOWN waiting..."
         return 3
     fi
