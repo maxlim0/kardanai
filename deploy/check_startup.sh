@@ -3,22 +3,25 @@
 # Эта логика нужна дла GihHub CI что бы понять когда закончился провиженинг 
 # дроплета и окружение готово к запуску основного приложения в докер контейнере
 
-SSH_USER="root"  # или ваш пользователь
+#!/bin/bash
+
+SSH_USER="root"
 
 if [ -z "$1" ]; then
     echo "Ошибка: IP-адрес не передан в функцию"
     exit 1
 fi
 
-check_startup() {
-    local ip_address
-    echo "check_startup ip: ${ip_address}"
+IP_ADDRESS="$1"
 
-    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$ip_address 'cloud-init status')
+check_startup() {
+    local ip="$1"
+    echo "check_startup ip: ${ip}"
+    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@${ip} 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
-        return 0  # скрипт завершен
+        return 0
     elif [[ $status == *"status: running"* ]]; then
-        return 1  # скрипт все еще выполняется
+        return 1
     elif [[ $status == *"status: error"* ]]; then
         echo "cloud-init завершился с ошибкой"
         return 2
@@ -29,12 +32,11 @@ check_startup() {
     fi
 }
 
-
 timeout=600
 start_time=$(date +%s)
 
 while true; do
-    if check_startup; then
+    if check_startup "$IP_ADDRESS"; then
         echo "Startup script завершен"
         break
     fi
