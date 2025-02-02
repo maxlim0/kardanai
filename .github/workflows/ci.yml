@@ -28,18 +28,7 @@ jobs:
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
           docker push $IMAGE_NAME
     
-  check-env:
-    name: env
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      
-      - name: env check
-        run: env
-
   deploy-and-run:
-    if: false
     name: Deploy to DigitalOcean and Collect Logs
     #needs: build-and-push
     runs-on: ubuntu-latest
@@ -55,22 +44,11 @@ jobs:
         run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
 
       - name: Create DigitalOcean Droplet
-        run: |
-          DROPLET_NAME="ubuntu-s-2vcpu-4gb-fra1-01"
-          doctl compute droplet create "$DROPLET_NAME" \
-            --region fra1 \
-            --image ubuntu-24-04-x64 \
-            --size s-2vcpu-4gb \
-            --user-data-file deploy/do-startup.sh \
-            --ssh-keys "44677180" \
-            --wait \
-            --format ID \
-            --no-header > droplet_id.txt
+        run: bash deploy/do-create-droplet.sh
 
       - name: Wait for Docker Container to Finish and Collect Logs
         run: |
-          DROPLET_ID=$(cat droplet_id.txt)
-          DROPLET_IP=$(doctl compute droplet get $DROPLET_ID --format PublicIPv4 --no-header)
+          DROPLET_IP=$(cat droplet_ip.txt)
           
           echo "Adding SSH key to agent"
           mkdir -p ~/.ssh

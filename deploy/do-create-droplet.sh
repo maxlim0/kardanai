@@ -43,19 +43,22 @@ done
 PROJECT_DIR="/app"
 
 # copy docker hub pwd
-
-if [ ${hostname} = "hole.local" ]
+if [[ "$(hostname)" == "hole.local" ]]; then
+    echo "Detected as hole.local system"
     ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_MacBookHoleGithub root@$(doctl compute d list | awk 'NR > 1 {print $3}') "mkdir -p /tmp/app/data/config"
     scp -r -i ~/.ssh/id_rsa_MacBookHoleGithub -o StrictHostKeyChecking=no \
         /Users/max/PycharmProjects/Topic/data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):/tmp/$PROJECT_DIR/data/
-else 
-    echo "dockerhub_password: {{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
-    echo "dockerhub_username: {{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
-    # # copy docker hub pwd
-    ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
-    scp -r -o StrictHostKeyChecking=no \
-        vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
+elif env | grep -q "^GITHUB"; then
+        echo "Detected as GITHUB system"
+        echo "dockerhub_password: {{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
+        echo "dockerhub_username: {{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
+        # # copy docker hub pwd
+        ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
+        scp -r -o StrictHostKeyChecking=no \
+            vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
+        echo $(doctl compute d list | awk 'NR > 1 {print $3}') > droplet_ip.txt
+else
+    echo "ERROR: System not detected."
 fi
-
 
 # doctl compute d list | awk 'NR > 1 {print $3}'
