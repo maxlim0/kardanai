@@ -16,7 +16,6 @@ IP_ADDRESS="$1"
 
 check_startup() {
     local ip="$1"
-    echo "check_startup ip: ${ip}"
     status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@${ip} 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
         return 0
@@ -24,6 +23,7 @@ check_startup() {
         return 1
     elif [[ $status == *"status: error"* ]]; then
         echo "cloud-init завершился с ошибкой"
+        exit 1
         return 2
     else
         echo $status
