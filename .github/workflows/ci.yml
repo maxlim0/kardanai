@@ -44,7 +44,7 @@ jobs:
         run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
 
       - name: Create DigitalOcean Droplet
-        run: bash deploy/do-create-droplet.sh
+        run: cd deploy && bash do-create-droplet.sh
 
       - name: Wait for Docker Container to Finish and Collect Logs
         run: |
