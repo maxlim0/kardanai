@@ -3,20 +3,11 @@
 # Эта логика нужна дла GihHub CI что бы понять когда закончился провиженинг 
 # дроплета и окружение готово к запуску основного приложения в докер контейнере
 
-SSH_USER="root"
-IP_ADDRESS="$1"
 CONFIG_FILE="/tmp/app/data/config/ansible/vars.yml"
-FLOW_CONTROL_GITHUB_TOKEN=$(grep 'FLOW_CONTROL_GITHUB_TOKEN:' ${CONFIG_FILE} | grep -o '"[^"]*"' | head -n1 | tr -d '"')
-
-if [ -z "$1" ]; then
-    echo "Ошибка: IP-адрес не передан в функцию"
-    exit 1  
-fi
-
+FLOW_CONTROL_GITHUB_TOKEN=$(grep "flow_control_github_token:" $CONFIG_FILE | cut -d' ' -f2)
 
 check_startup() {
-    local ip="$1"
-    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@${ip} 'cloud-init status')
+    status=$(cloud-init status)
     if [[ $status == *"status: done"* ]]; then
         return 0
     elif [[ $status == *"status: running"* ]]; then
@@ -25,9 +16,9 @@ check_startup() {
         echo "cloud-init завершился с ошибкой"
         
         # Send status to GitHub Actions
-        curl -X POST https://api.github.com/repos/maxsolyaris/kardanai/dispatches \
+        curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
             -H 'Accept: application/vnd.github.everest-preview+json' \
-            -u "${FLOW_CONTROL_GITHUB_TOKEN}" \
+            -H "Authorization: Bearer ${FLOW_CONTROL_GITHUB_TOKEN}" \
             --data '{"event_type": "cloud-init-status", "client_payload": { "status": "error"}}'        
         exit 1
     else
@@ -41,11 +32,11 @@ timeout=600
 start_time=$(date +%s)
 
 while true; do
-    if check_startup "$IP_ADDRESS"; then
+    if check_startup; then
         echo "Startup script завершен"
         
         # Send status to GitHub Actions 
-        curl -X POST https://api.github.com/repos/maxsolyaris/kardanai/dispatches \
+        curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
             -H 'Accept: application/vnd.github.everest-preview+json' \
             -u "${FLOW_CONTROL_GITHUB_TOKEN}" \
             --data '{"event_type": "cloud-init-status", "client_payload": { "status": "ready"}}'
