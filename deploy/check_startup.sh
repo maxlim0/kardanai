@@ -5,9 +5,16 @@
 
 SSH_USER="root"  # или ваш пользователь
 
+if [ -z "$1" ]; then
+    echo "Ошибка: IP-адрес не передан в функцию"
+    exit 1
+fi
+
 check_startup() {
-    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'cloud-init status')
-    echo "check_startup ip: ${1}"
+    local ip_address
+Q    echo "check_startup ip: ${ip_address}"
+
+    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$ip_address 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
         return 0  # скрипт завершен
     elif [[ $status == *"status: running"* ]]; then
