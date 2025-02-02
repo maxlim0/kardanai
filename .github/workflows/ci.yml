@@ -32,6 +32,9 @@ jobs:
     name: Deploy to DigitalOcean and Collect Logs
     #needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -55,9 +58,6 @@ jobs:
         # Если нужно будет более одного хоста, логику надо переделать вместо docker ip
         # использовать droplet id
       - name: Wait for Docker Container to Finish and Collect Logs
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           DROPLET_IP=$(cat droplet_ip.txt)
           
