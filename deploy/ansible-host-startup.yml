@@ -5,7 +5,8 @@
   become: yes
   vars:
     PROJECT_DIR: "/app"
-    DOCKER_IMAGE: "maxsolyaris/kardanai:latest"
+    #DOCKER_IMAGE: "maxsolyaris/kardanai:latest"
+    DOCKER_IMAGE: "nginx"
   vars_files:
     - "/tmp/{{ PROJECT_DIR }}/data/config/ansible/vars.yml"
 
