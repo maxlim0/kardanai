@@ -5,11 +5,10 @@
 
 #!/bin/bash
 
-SERVER_IP="your_droplet_ip"
 SSH_USER="root"  # или ваш пользователь
 
 check_startup() {
-    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$DROPLET_IP 'cloud-init status')
+    status=$(ssh -o StrictHostKeyChecking=no $SSH_USER$1 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
         return 0  # скрипт завершен
     elif [[ $status == *"status: running"* ]]; then

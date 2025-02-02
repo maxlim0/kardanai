@@ -27,7 +27,7 @@ while true; do
     # Проверяем, что строка похожа на IP-адрес с помощью регулярного выражения
     if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         echo -e "\rHost created! IP: $ip"
-        echo "sleep 40; whaiting for the host startup"
+        echo "sleep 40; Waiting for the host startup"
         sleep 40 # ждем поднятия сервисов
         break
     fi
@@ -37,7 +37,7 @@ while true; do
         exit 1
     fi
     
-    echo -ne "\rWaiting for host: $((++count)) sec for $timeout"
+    echo -ne "\rWaiting for the host: $((++count)) sec for $timeout"
     sleep 1
 done
 

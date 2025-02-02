@@ -70,7 +70,7 @@ jobs:
               vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
 
           # проверим готовность провиженинга дроплета
-          bash deploy/check_startup.sh
+          bash deploy/check_startup.sh $DROPLET_IP
             
           echo "Waiting for container to finish..."
           while ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker ps --filter 'name=train' --format '{{.Names}}'" | grep -q "train"; do
