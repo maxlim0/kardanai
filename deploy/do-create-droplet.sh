@@ -56,7 +56,7 @@ elif env | grep -q "^GITHUB"; then
         echo "dockerhub_username: ${DOCKERHUB_USERNAME}" >> vars.yml
         # # copy docker hub pwd
         ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config/ansible"
-        scp -r -o StrictHostKeyChecking=no vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config/absible
+        scp -r -o StrictHostKeyChecking=no vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config/ansible
         echo $DROPLET_IP > ../droplet_ip.txt
 else
     echo "ERROR: System not detected."
