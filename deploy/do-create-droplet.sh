@@ -41,6 +41,7 @@ while true; do
 done
 
 PROJECT_DIR="/app"
+DROPLET_IP=$(doctl compute d list | awk 'NR > 1 {print $3}')
 
 # copy docker hub pwd
 if [[ "$(hostname)" == "hole.local" ]]; then
@@ -56,7 +57,7 @@ elif env | grep -q "^GITHUB"; then
         ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
         scp -r -o StrictHostKeyChecking=no \
             vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
-        echo $(doctl compute d list | awk 'NR > 1 {print $3}') > droplet_ip.txt
+        echo $DROPLET_IP > ../droplet_ip.txt
 else
     echo "ERROR: System not detected."
 fi
