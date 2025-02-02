@@ -27,8 +27,19 @@ jobs:
         run: |
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
           docker push $IMAGE_NAME
+    
+  check-env:
+    name: env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: env check
+        run: env
 
   deploy-and-run:
+    if: false
     name: Deploy to DigitalOcean and Collect Logs
     #needs: build-and-push
     runs-on: ubuntu-latest
@@ -66,6 +77,7 @@ jobs:
           echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+          PROJECT_DIR="/app"
           echo "dockerhub_password: {{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
           echo "dockerhub_username: {{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
           # # copy docker hub pwd
