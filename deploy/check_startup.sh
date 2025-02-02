@@ -12,7 +12,7 @@ fi
 
 check_startup() {
     local ip_address
-Q    echo "check_startup ip: ${ip_address}"
+    echo "check_startup ip: ${ip_address}"
 
     status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$ip_address 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
