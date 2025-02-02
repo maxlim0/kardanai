@@ -20,12 +20,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/kardanai:latest"
           docker build -t $IMAGE_NAME .
       
       - name: Push Docker Image to Docker Hub
         run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest"
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/kardanai:latest"
           docker push $IMAGE_NAME
     
   deploy-and-run:
@@ -86,6 +86,6 @@ jobs:
 
       - name: Delete Droplet
         run: |
-          DROPLET_ID=$(cat droplet_id.txt)
-          doctl compute droplet delete "$DROPLET_ID" --force
+          DROPLET_IP=$(cat droplet_ip.txt)
+          doctl compute droplet delete "$DROPLET_IP" --force
   
