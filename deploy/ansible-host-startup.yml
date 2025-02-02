@@ -99,3 +99,21 @@
         ulimits:
           - "memlock:-1:-1"
           - "stack:67108864:67108864"
+
+  post_tasks:
+    - name: Check Docker Container Status
+      shell: docker inspect --format='{{ '{{' }} .State.Status }}' train
+      register: container_status
+      until: container_status.stdout == "exited"
+      retries: 720 # 720 * 5 sec = 1 hour
+      delay: 5
+        
+    - name: Collect Container Logs  
+      shell: docker logs train > /tmp/container_logs.txt
+        
+    - name: Send Container Status to GitHub Actions
+      shell: | 
+        curl -X POST https://api.github.com/repos/&lt;maxsolyaris&gt;/&lt;kardanai&gt;/dispatches \
+          -H 'Accept: application/vnd.github.everest-preview+json' \
+          -u ${{ secrets.ACCESS_TOKEN }} \
+          --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'

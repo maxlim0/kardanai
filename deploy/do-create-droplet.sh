@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ "$1" == "GPU" ]; then
     echo "Creating GPU instance..."
     doctl compute droplet create \
@@ -54,6 +56,7 @@ elif env | grep -q "^GITHUB"; then
         echo "Detected as GITHUB system"
         echo "dockerhub_password: ${DOCKERHUB_PASSWORD}" > vars.yml
         echo "dockerhub_username: ${DOCKERHUB_USERNAME}" >> vars.yml
+        echo "flow_control_github_token: ${FLOW_CONTROL_GITHUB_TOKEN}" >> vars.yml
         # # copy docker hub pwd
         ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config/ansible"
         scp -r -o StrictHostKeyChecking=no vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config/ansible
