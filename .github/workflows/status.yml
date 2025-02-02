@@ -45,7 +45,7 @@ jobs:
   cleanup:
     name: Delete Droplet
     needs: [docker-container-status, cloud-init-status]
-    # if: ${{ always() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

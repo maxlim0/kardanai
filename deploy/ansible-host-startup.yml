@@ -108,6 +108,10 @@
 
   post_tasks:
     - block:
+        - name: Ensure status is reported
+          debug:
+            msg: "Post-tasks block completed"
+      always:
         - name: Check Docker Container Status
           shell: "docker inspect --format='{{.State.Status}}' train"
           register: container_status
@@ -124,7 +128,3 @@
             -H 'Accept: application/vnd.github.everest-preview+json'
             -H 'Authorization: token {{ flow_control_github_token }}'
             --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'
-      always:
-        - name: Ensure status is reported
-          debug:
-            msg: "Post-tasks block completed"
