@@ -11,7 +11,7 @@
 
   tasks:
     - name: Run background script
-      shell: nohup {{ PROJECT_DIR }}/deploy/check_startup.sh > {{ PROJECT_DIR }}/check_startup.log 2>&1 &
+      shell: nohup bash {{ PROJECT_DIR }}/deploy/check_startup.sh > {{ PROJECT_DIR }}/check_startup.log 2>&1 &
       async: 1000
       poll: 0
       become: true
@@ -107,20 +107,24 @@
           - "stack:67108864:67108864"
 
   post_tasks:
-    - name: Check Docker Container Status
-      shell: docker inspect --format='{{ '{{' }} .State.Status }}' train
-      register: container_status
-      until: container_status.stdout == "exited"
-      retries: 720 # 720 * 5 sec = 1 hour
-      delay: 5
-      always: yes
-        
-    - name: Collect Container Logs  
-      shell: docker logs train > /tmp/container_logs.txt
-        
-    - name: Send Container Status to GitHub Actions
-      shell: | 
-        curl -X POST https://api.github.com/repos/&lt;maxsolyaris&gt;/&lt;kardanai&gt;/dispatches \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          -u ${{ secrets.ACCESS_TOKEN }} \
-          --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'
+    - block:
+        - name: Check Docker Container Status
+          shell: "docker inspect --format='{{.State.Status}}' train"
+          register: container_status
+          until: container_status.stdout == "exited"
+          retries: 720
+          delay: 5
+
+        - name: Collect Container Logs
+          shell: "docker logs train > /tmp/container_logs.txt"
+          
+        - name: Send Container Status to GitHub Actions
+          shell: >
+            curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches
+            -H 'Accept: application/vnd.github.everest-preview+json'
+            -H 'Authorization: token {{ flow_control_github_token }}'
+            --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'
+      always:
+        - name: Ensure status is reported
+          debug:
+            msg: "Post-tasks block completed"
