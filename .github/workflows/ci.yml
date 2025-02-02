@@ -44,7 +44,13 @@ jobs:
         run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
 
       - name: Create DigitalOcean Droplet
-        run: cd deploy && bash do-create-droplet.sh
+        run: |
+          echo "Adding SSH key to agent"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cd deploy && bash do-create-droplet.sh
 
         # Если нужно будет более одного хоста, логику надо переделать вместо docker ip
         # использовать droplet id
@@ -59,10 +65,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-          PROJECT_DIR="/app"
-          echo "dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
-          echo "dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
           
           # проверим готовность провиженинга дроплета
           bash deploy/check_startup.sh $DROPLET_IP
