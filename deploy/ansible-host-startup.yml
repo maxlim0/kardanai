@@ -14,6 +14,7 @@
       shell: nohup {{ PROJECT_DIR }}/deploy/check_startup.sh > {{ PROJECT_DIR }}/check_startup.log 2>&1 &
       async: 1000
       poll: 0
+      become: true
 
     - name: Install required packages
       apt:
@@ -112,6 +113,7 @@
       until: container_status.stdout == "exited"
       retries: 720 # 720 * 5 sec = 1 hour
       delay: 5
+      always: yes
         
     - name: Collect Container Logs  
       shell: docker logs train > /tmp/container_logs.txt
