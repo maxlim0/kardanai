@@ -46,7 +46,12 @@ jobs:
       - name: Create DigitalOcean Droplet
         run: cd deploy && bash do-create-droplet.sh
 
+        # Если нужно будет более одного хоста, логику надо переделать вместо docker ip
+        # использовать droplet id
       - name: Wait for Docker Container to Finish and Collect Logs
+        env:
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           DROPLET_IP=$(cat droplet_ip.txt)
           

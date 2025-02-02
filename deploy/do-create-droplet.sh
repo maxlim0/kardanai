@@ -51,8 +51,8 @@ if [[ "$(hostname)" == "hole.local" ]]; then
         /Users/max/PycharmProjects/Topic/data/config root@$(doctl compute d list | awk 'NR > 1 {print $3}'):/tmp/$PROJECT_DIR/data/
 elif env | grep -q "^GITHUB"; then
         echo "Detected as GITHUB system"
-        echo "dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
-        echo "dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
+        echo "dockerhub_password: ${DOCKERHUB_PASSWORD}" > vars.yml
+        echo "dockerhub_username: ${DOCKERHUB_USERNAME}" >> vars.yml
         # # copy docker hub pwd
         ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
         scp -r -o StrictHostKeyChecking=no \
