@@ -5,6 +5,7 @@ from datasets import Dataset, concatenate_datasets
 from huggingface_hub import login
 from utils.save_model_artifact import upload_to_gcs
 from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN
+import torch
 
 from transformers import (
     AutoModelForCausalLM,
@@ -38,16 +39,25 @@ async def start_train():
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.model_max_length = 512
 
+    device = torch.device("cuda")
+
     # Загрузка модели с квантизацией
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    # model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda")
+    print(model.device)
+    print("CUDA доступна:", torch.cuda.is_available())
+    print("Используемые GPU:", torch.cuda.device_count())
+    print("CUDA версия PyTorch:", torch.version.cuda)
+
+
 
     def tokenize_function(examples):
         model_inputs = tokenizer(
             examples["text"],
             truncation=True,
             padding='max_length',
-            return_tensors=None
-        )
+            return_tensors="pt"
+        ).to(device)
         
         # #Проверка структуры
         # print("\nСтруктура model_inputs после токенизации:")
@@ -154,18 +164,19 @@ async def start_train():
     training_args = TrainingArguments(
         output_dir="data/model/llama_lora_output",  # Директория для сохранения модели и логов
         num_train_epochs=4,                   # Количество эпох обучения
-        per_device_train_batch_size=8,         # Размер батча для обучения на одном устройстве
+        per_device_train_batch_size=32,         # Размер батча для обучения на одном устройстве
         per_device_eval_batch_size=4,          # Размер батча для валидации на одном устройстве  
         gradient_accumulation_steps=2,         # Шаги накопления градиента перед оптимизацией имитируем большой батч: per_device_train_batch_size * gradient_accumulation_steps
         eval_strategy="steps",           # Стратегия оценки - каждые n шагов
         eval_steps=25,                          # Количество пакетов для оценки
         #eval_frequency=100,                    # Частота шагов оценки
-        save_steps=0,                          # Частота сохранения чекпоинтов
+        save_steps=200,                          # Частота сохранения чекпоинтов
         learning_rate=1e-5,                    # Скорость обучения 
         weight_decay=0.01,                     # Коэффициент L2-регуляризации
-        fp16=False,                            # Использование 16-битной точности
+        fp16=True,                            # Использование 16-битной точности
+        use_cpu=False,
         warmup_ratio=0.1,                      # 0.1 =  10% # Количество шагов для разогрева learning rate
-        save_total_limit=3,                    # Максимальное количество сохраняемых чекпоинтов
+        save_total_limit=1,                    # Максимальное количество сохраняемых чекпоинтов
         logging_dir="data/model/logs",
         report_to=["tensorboard"],
         do_train=True,

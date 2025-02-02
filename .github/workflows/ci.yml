@@ -1,0 +1,60 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - master
+  repository_dispatch:
+    types: [cloud-init-status, docker-container-status]  
+
+jobs:
+  build-and-push:
+    if: false
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/kardanai:latest"
+          docker build -t $IMAGE_NAME .
+      
+      - name: Push Docker Image to Docker Hub
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/kardanai:latest"
+          docker push $IMAGE_NAME
+    
+  deploy:
+    name: Deploy to DigitalOcean and Collect Logs
+    #needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      FLOW_CONTROL_GITHUB_TOKEN: ${{ secrets.FLOW_CONTROL_GITHUB_TOKEN }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        run: |
+          sudo snap install doctl
+  
+      - name: Authenticate doctl
+        run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
+
+      - name: Create DigitalOcean Droplet
+        run: |
+          echo "Adding SSH key to agent"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cd deploy && bash do-create-droplet.sh
+  
