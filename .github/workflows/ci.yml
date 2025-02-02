@@ -66,14 +66,21 @@ jobs:
           echo "${{ secrets.DIGITALOCEAN_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+          echo "dockerhub_password: {{ secrets.DOCKERHUB_PASSWORD }}" > vars.yml
+          echo "dockerhub_username: {{ secrets.DOCKERHUB_USERNAME }}" >> vars.yml
+          # # copy docker hub pwd
+          ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
+          scp -r -o StrictHostKeyChecking=no \
+              vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
+
           echo "Waiting for container to finish..."
-          while ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker ps --filter 'name=my-app' --format '{{.Names}}'" | grep -q "my-app"; do
+          while ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker ps --filter 'name=train' --format '{{.Names}}'" | grep -q "train"; do
             echo "Container is still running..."
             sleep 30
           done
 
           echo "Container finished, collecting logs..."
-          ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker logs my-app" > container_logs.txt
+          ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "docker logs train" > container_logs.txt
 
       - name: Save Logs as Artifact
         uses: actions/upload-artifact@v4
