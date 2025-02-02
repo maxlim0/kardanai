@@ -12,8 +12,14 @@ check_startup() {
     status=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$DROPLET_IP 'cloud-init status')
     if [[ $status == *"status: done"* ]]; then
         return 0  # скрипт завершен
-    else
+    elif [[ $status == *"status: running"* ]]; then
         return 1  # скрипт все еще выполняется
+    elif [[ $status == *"status: error"* ]]; then
+        echo "cloud-init завершился с ошибкой"
+        return 2
+    else
+        echo "cloud-init status UNKNOWN waiting..."
+        return 3
     fi
 }
 

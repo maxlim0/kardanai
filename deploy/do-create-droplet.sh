@@ -27,6 +27,7 @@ while true; do
     # Проверяем, что строка похожа на IP-адрес с помощью регулярного выражения
     if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         echo -e "\rHost created! IP: $ip"
+        echo "sleep 40; whaiting for the host startup"
         sleep 40 # ждем поднятия сервисов
         break
     fi
@@ -54,9 +55,8 @@ elif env | grep -q "^GITHUB"; then
         echo "dockerhub_password: ${DOCKERHUB_PASSWORD}" > vars.yml
         echo "dockerhub_username: ${DOCKERHUB_USERNAME}" >> vars.yml
         # # copy docker hub pwd
-        ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config"
-        scp -r -o StrictHostKeyChecking=no \
-            vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config
+        ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "mkdir -p /tmp/app/data/config/ansible"
+        scp -r -o StrictHostKeyChecking=no vars.yml root@$DROPLET_IP:/tmp/$PROJECT_DIR/data/config/absible
         echo $DROPLET_IP > ../droplet_ip.txt
 else
     echo "ERROR: System not detected."
