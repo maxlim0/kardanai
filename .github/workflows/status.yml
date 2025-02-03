@@ -5,7 +5,7 @@ on:
     types: [docker-container-status]
 
 jobs:
-  docker-container-status:
+  docker-status:
     name: Check Docker Container Status and Collect Logs
     runs-on: ubuntu-latest
     if: github.event_name == 'repository_dispatch' && github.event.action == 'docker-container-status'
@@ -30,7 +30,7 @@ jobs:
 
   cleanup:
     name: Delete Droplet
-    needs: docker-container-status
+    needs: docker-status
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
