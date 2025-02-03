@@ -22,12 +22,15 @@ jobs:
             exit 1
           fi
 
+      - name: Save Logs to File
+        run: echo "${{ github.event.client_payload.logs }}" > container_logs.txt
+
       - name: Save Logs as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: container-logs
-          path: "${{ github.event.client_payload.log_path }}"
-
+          path: container_logs.txt
+          
   cleanup:
     name: Delete Droplet
     needs: docker-status
