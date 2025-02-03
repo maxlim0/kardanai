@@ -2,10 +2,11 @@ name: Status Check Pipeline
 
 on:
   repository_dispatch:
-    types: [cloud-init-status, docker-container-status]
+    types: [docker-container-status]
 
 jobs:
   cloud-init-status:
+    if: false
     name: Check Cloud Init Status
     runs-on: ubuntu-latest
     if: github.event_name == 'repository_dispatch' && github.event.action == 'cloud-init-status'
@@ -46,15 +47,21 @@ jobs:
     name: Delete Droplet
     needs: [docker-container-status, cloud-init-status]
     if: |
-      always() && 
-      (needs.cloud-init-status.result == 'failure' || 
-       (needs.cloud-init-status.result == 'success' && needs.docker-container-status.result != 'skipped'))
+      always() &&
+      (contains(needs.*.result, 'failure') ||
+      (contains(needs.*.result, 'success') && contains(needs.*.result, 'skipped') == false))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install doctl
+        run: |
+          sudo snap install doctl
+  
+      - name: Authenticate doctl
+        run: doctl auth init -t "${{ secrets.DIGITALOCEAN_TOKEN }}"
+
       - name: Delete Droplet
         run: |
-          DROPLET_IP=$(cat droplet_ip.txt)
-          doctl compute droplet delete "$DROPLET_IP" --force
+          doctl compute droplet delete $(doctl compute d list | awk 'NR > 1 {print $3}') --force

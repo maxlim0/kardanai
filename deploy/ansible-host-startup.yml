@@ -11,130 +11,125 @@
     - "/tmp/{{ PROJECT_DIR }}/data/config/ansible/vars.yml"
 
   tasks:
-    - name: block
-      block:
-        - name: Run background script
-          shell: nohup bash {{ PROJECT_DIR }}/deploy/check_startup.sh > {{ PROJECT_DIR }}/check_startup.log 2>&1 &
-          async: 1000
-          poll: 0
-          become: true
+    # - name: Run background script
+    #   shell: nohup bash {{ PROJECT_DIR }}/deploy/check_startup.sh > {{ PROJECT_DIR }}/check_startup.log 2>&1 &
+    #   async: 1000
+    #   poll: 0
+    #   become: true
 
-        - name: Install required packages
-          apt:
-            name:
-              - apt-transport-https
-              - ca-certificates
-              - curl
-              - software-properties-common
-            state: present
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+    
+    - name: Nvidia repo add
+      shell: |
+        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+        && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+        sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+        tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
         
-        - name: Nvidia repo add
-          shell: |
-            curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-            && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-            sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-            tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-            
-        - name: nvidia-container-toolkit
-          apt:
-            name:
-              - nvidia-container-toolkit
-            state: present
-            update_cache: yes
+    - name: nvidia-container-toolkit
+      apt:
+        name:
+          - nvidia-container-toolkit
+        state: present
+        update_cache: yes
 
-        - name: NVIDIA Container Toolkit Docker
-          command: nvidia-ctk runtime configure --runtime=docker
+    - name: NVIDIA Container Toolkit Docker
+      command: nvidia-ctk runtime configure --runtime=docker
 
-        - name: Add Docker GPG key
-          apt_key:
-            url: https://download.docker.com/linux/ubuntu/gpg
-            state: present
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
 
-        - name: Add Docker repo
-          apt_repository:
-            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-            state: present
-            filename: docker
+    - name: Add Docker repo
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
 
-        - name: Install required packages
-          apt:
-            name: 
-              - docker-ce
-              - docker-ce-cli
-              - containerd.io
-              - python3-pip
-              - python3-docker
-            state: present
+    - name: Install required packages
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - python3-pip
+          - python3-docker
+        state: present
 
-        - name: Start Docker service
-          service:
-            name: docker
-            state: started
-            enabled: yes
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-        - name: Wait for Docker deamon to be ready 
-          wait_for:
-            path: /var/run/docker.sock
-            state: present
-            timeout: 60
+    - name: Wait for Docker deamon to be ready 
+      wait_for:
+        path: /var/run/docker.sock
+        state: present
+        timeout: 60
 
-        - name: Log in to DockerHub
-          docker_login:
-            username: "{{ dockerhub_username }}"
-            password: "{{ dockerhub_password }}"
-          register: dockerhub_log_results
-          until: dockerhub_log_results is success
-          retries: 3
-          delay: 30
-            
-        - name: Pull private image
-          docker_image:
-            name: "{{ DOCKER_IMAGE }}"
-            source: pull
-            force_source: yes
+    - name: Log in to DockerHub
+      docker_login:
+        username: "{{ dockerhub_username }}"
+        password: "{{ dockerhub_password }}"
+      register: dockerhub_log_results
+      until: dockerhub_log_results is success
+      retries: 3
+      delay: 30
+        
+    - name: Pull private image
+      docker_image:
+        name: "{{ DOCKER_IMAGE }}"
+        source: pull
+        force_source: yes
 
-        - name: Run container
-          docker_container:
-            name: train
-            image: "{{ DOCKER_IMAGE }}"
-            volumes:
-              - "/in_container_app:/app/data/model"
-            state: started
-            device_requests:
-              - driver: nvidia
-                count: -1
-                capabilities: [gpu]
-            ipc_mode: host
-            ulimits:
-              - "memlock:-1:-1"
-              - "stack:67108864:67108864"
+    - name: Run container
+      docker_container:
+        name: train
+        image: "{{ DOCKER_IMAGE }}"
+        volumes:
+          - "/in_container_app:/app/data/model"
+        state: started
+        device_requests:
+          - driver: nvidia
+            count: -1
+            capabilities: [gpu]
+        ipc_mode: host
+        ulimits:
+          - "memlock:-1:-1"
+          - "stack:67108864:67108864"
 
-      rescue:
-        - name: Log failure
-          debug:
-            msg: "Failed to start"
+    - name: Check if container has exited
+      shell: "docker inspect --format='{{ '{{' }}.State.ExitCode{{ '}}' }}' train 2>/dev/null || echo 'unknown'"
+      register: container_exit_code
+      retries: 720
+      delay: 5
+      until: container_exit_code.stdout is not none
 
+    - name: Collect Container Logs
+      command: docker logs train
+      register: container_logs
 
-      always:
-        - name: Check if container has exited
-          shell: "docker ps -a --filter 'name=train' --filter 'status=exited' --format '{{ '{{' }}.ID{{ '}}' }}'"
-          register: container_status
-          retries: 720
-          delay: 5
-          until: container_status.stdout | length > 0
+    - name: Save Container Logs to File
+      copy:
+        content: "{{ container_logs.stdout }}"
+        dest: /tmp/container_logs.txt
 
-        - name: Collect Container Logs
-          command: docker logs train
-          register: container_logs
+    - name: Determine Container Status
+      set_fact:
+        container_status: "{{ 'completed' if (container_exit_code.stdout | int == 0) else 'error' }}"
 
-        - name: Save Container Logs to File
-          copy:
-            content: "{{ container_logs.stdout }}"
-            dest: /tmp/container_logs.txt
-
-        - name: Send Container Status to GitHub Actions
-          shell: |
-            curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
-            -H "Accept: application/vnd.github.everest-preview+json" \
-            -H "Authorization: token {{ flow_control_github_token }}" \
-            --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'
+    - name: Send Container Status to GitHub Actions
+      shell: |
+        curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
+        -H "Accept: application/vnd.github.everest-preview+json" \
+        -H "Authorization: token {{ flow_control_github_token }}" \
+        --data '{"event_type": "docker-container-status", "client_payload": { "status": "{{ container_status }}", "log_path":"/tmp/container_logs.txt" }}'
