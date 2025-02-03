@@ -45,4 +45,4 @@ jobs:
 
       - name: Delete Droplet
         run: |
-          doctl compute droplet delete $(doctl compute d list | awk 'NR > 1 {print $3}') --force
+          sh deploy/do-delete-host.sh

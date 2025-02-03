@@ -116,7 +116,7 @@
 
       always:
         - name: Wait for container to exit
-          shell: "docker inspect --format='{{.State.Running}}' train"
+          shell: "docker inspect --format='{{ '{{' }}.State.Running{{ '}}' }}' train"
           register: container_running
           retries: 720
           delay: 5
