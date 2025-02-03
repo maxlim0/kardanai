@@ -24,5 +24,5 @@ EOF
 touch /var/log/ansible.log
 chmod 666 /var/log/ansible.log
 
-git clone -b ci2 https://github.com/maxlim0/kardanai.git "$PROJECT_DIR"
+git clone -b ci3 https://github.com/maxlim0/kardanai.git "$PROJECT_DIR"
 ansible-playbook "${PROJECT_DIR}/deploy/ansible-host-startup.yml"

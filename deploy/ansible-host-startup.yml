@@ -114,14 +114,13 @@
           debug:
             msg: "Failed to start"
 
-
       always:
         - name: Check if container has exited
-          shell: "docker ps -a --filter 'name=train' --filter 'status=exited' --format '{{ '{{' }}.ID{{ '}}' }}'"
-          register: container_status
+          shell: "docker inspect --format='{{ '{{' }}.State.ExitCode{{ '}}' }}' train 2>/dev/null || echo 'unknown'"
+          register: container_exit_code
           retries: 720
           delay: 5
-          until: container_status.stdout | length > 0
+          until: container_exit_code.stdout is not none
 
         - name: Collect Container Logs
           command: docker logs train
@@ -132,9 +131,14 @@
             content: "{{ container_logs.stdout }}"
             dest: /tmp/container_logs.txt
 
+        - name: Determine Container Status
+          set_fact:
+            container_status: "{{ 'completed' if (container_exit_code.stdout | int == 0) else 'error' }}"
+
         - name: Send Container Status to GitHub Actions
           shell: |
             curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
             -H "Accept: application/vnd.github.everest-preview+json" \
             -H "Authorization: token {{ flow_control_github_token }}" \
-            --data '{"event_type": "docker-container-status", "client_payload": { "status": "completed", "log_path":"/tmp/container_logs.txt" }}'
+            --data '{"event_type": "docker-container-status", "client_payload": { "status": "{{ container_status }}", "log_path":"/tmp/container_logs.txt" }}'
+            
