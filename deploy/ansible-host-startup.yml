@@ -100,14 +100,14 @@
             volumes:
               - "/in_container_app:/app/data/model"
             state: started
-            # device_requests:
-            #   - driver: nvidia
-            #     count: -1
-            #     capabilities: [gpu]
-            # ipc_mode: host
-            # ulimits:
-            #   - "memlock:-1:-1"
-            #   - "stack:67108864:67108864"
+            device_requests:
+              - driver: nvidia
+                count: -1
+                capabilities: [gpu]
+            ipc_mode: host
+            ulimits:
+              - "memlock:-1:-1"
+              - "stack:67108864:67108864"
 
       rescue:
         - name: Log failure

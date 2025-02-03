@@ -6,6 +6,7 @@ from huggingface_hub import login
 from utils.save_model_artifact import upload_to_gcs
 from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN
 import torch
+import logging
 
 from transformers import (
     AutoModelForCausalLM,
@@ -20,6 +21,18 @@ from peft import (
     LoraConfig,
     get_peft_model,
 )
+
+# Переключение между локальным тестированием и CUDA 
+# local
+# fp16=False,
+# tokenize_function()
+# #device = torch.device("cuda") закоменчена
+
+
+# cuda
+# fp16=True, 
+# tokenize_function().to(device)
+#device = torch.device("cuda") раскоменчена
 
 async def start_train():
     # Инициализация модели и токенизатора
@@ -45,11 +58,6 @@ async def start_train():
     # model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
     model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda")
     print(model.device)
-    print("CUDA доступна:", torch.cuda.is_available())
-    print("Используемые GPU:", torch.cuda.device_count())
-    print("CUDA версия PyTorch:", torch.version.cuda)
-
-
 
     def tokenize_function(examples):
         model_inputs = tokenizer(
@@ -65,13 +73,13 @@ async def start_train():
         # if len(model_inputs['input_ids']) > 0:
         #     print(f"Длина первой последовательности: {len(model_inputs['input_ids'][0])}")
         
-        model_inputs['labels'] = model_inputs['input_ids'].copy()    
+        model_inputs['labels'] = model_inputs['input_ids'].clone()    
         return model_inputs
 
     # Конфигурация LoRA
     lora_config = LoraConfig(
-        r=16,                    # ранг матрицы
-        lora_alpha=8,           # альфа параметр  # alpha = 2*r (стандартная практика)
+        r=32,                    # ранг матрицы
+        lora_alpha=16,           # альфа параметр  # alpha = 2*r (стандартная практика)
         lora_dropout=0.05,       # dropout для регуляризации
         bias="none",
         task_type="CAUSAL_LM",   # тип задачи
@@ -163,17 +171,18 @@ async def start_train():
     # Настройка параметров обучения
     training_args = TrainingArguments(
         output_dir="data/model/llama_lora_output",  # Директория для сохранения модели и логов
-        num_train_epochs=4,                   # Количество эпох обучения
+        num_train_epochs=8,                   # Количество эпох обучения
         per_device_train_batch_size=32,         # Размер батча для обучения на одном устройстве
+        #per_device_train_batch_size=4,         # Размер батча для обучения на одном устройстве
         per_device_eval_batch_size=4,          # Размер батча для валидации на одном устройстве  
         gradient_accumulation_steps=2,         # Шаги накопления градиента перед оптимизацией имитируем большой батч: per_device_train_batch_size * gradient_accumulation_steps
-        eval_strategy="steps",           # Стратегия оценки - каждые n шагов
-        eval_steps=25,                          # Количество пакетов для оценки
-        #eval_frequency=100,                    # Частота шагов оценки
-        save_steps=200,                          # Частота сохранения чекпоинтов
+        eval_strategy="steps",                 # Стратегия оценки - каждые n шагов
+        eval_steps=25,                         # Количество пакетов для оценки
+        save_steps=200,                        # Частота сохранения чекпоинтов
         learning_rate=1e-5,                    # Скорость обучения 
         weight_decay=0.01,                     # Коэффициент L2-регуляризации
-        fp16=True,                            # Использование 16-битной точности
+        #fp16=False,                            # Использование 16-битной точности
+        fp16=True,
         use_cpu=False,
         warmup_ratio=0.1,                      # 0.1 =  10% # Количество шагов для разогрева learning rate
         save_total_limit=1,                    # Максимальное количество сохраняемых чекпоинтов
