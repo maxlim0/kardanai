@@ -1,8 +1,10 @@
 ARG TARGETPLATFORM=linux/amd64
 FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu24.04
+#FROM python:3.12.8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 ENV POETRY_VIRTUALENVS_PATH=/root/.venv
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY . .
 VOLUME /app/data/model
