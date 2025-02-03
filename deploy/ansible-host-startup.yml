@@ -147,5 +147,5 @@
             curl -X POST https://api.github.com/repos/maxlim0/kardanai/dispatches \
             -H "Accept: application/vnd.github.everest-preview+json" \
             -H "Authorization: token {{ flow_control_github_token }}" \
-            --data '{"event_type": "docker-container-status", "client_payload": { "status": "{{ container_status }}", "log_path":"/tmp/container_logs.txt" }}'
+            --data '{"event_type": "docker-container-status", "client_payload": { "status": "{{ container_status }}", "logs": {{ container_logs.stdout | to_json }} }}'
             
