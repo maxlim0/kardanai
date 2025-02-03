@@ -100,14 +100,14 @@
             volumes:
               - "/in_container_app:/app/data/model"
             state: started
-            device_requests:
-              - driver: nvidia
-                count: -1
-                capabilities: [gpu]
-            ipc_mode: host
-            ulimits:
-              - "memlock:-1:-1"
-              - "stack:67108864:67108864"
+            # device_requests:
+            #   - driver: nvidia
+            #     count: -1
+            #     capabilities: [gpu]
+            # ipc_mode: host
+            # ulimits:
+            #   - "memlock:-1:-1"
+            #   - "stack:67108864:67108864"
 
       rescue:
         - name: Log failure
@@ -115,6 +115,13 @@
             msg: "Failed to start"
 
       always:
+        - name: Wait for container to exit
+          shell: "docker inspect --format='{{ '{{' }}.State.Running{{ '}}' }}' train"
+          register: container_running
+          retries: 720
+          delay: 5
+          until: container_running.stdout == "false"
+
         - name: Check if container has exited
           shell: "docker inspect --format='{{ '{{' }}.State.ExitCode{{ '}}' }}' train 2>/dev/null || echo 'unknown'"
           register: container_exit_code
