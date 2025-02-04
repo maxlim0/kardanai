@@ -35,7 +35,8 @@ def analyze_model_architecture(model):
 
 def main():
     #model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-    model_id = "meta-llama/Llama-3.2-1B"
+    #model_id = "meta-llama/Llama-3.2-1B"
+    model_id = "meta-llama/Llama-3.2-3B"
     model = AutoModel.from_pretrained(
         model_id,
         device_map="auto",
