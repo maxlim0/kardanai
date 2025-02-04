@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$1" == "GPU" ]; then
+if [ "$1" == "gpu" ]; then
     echo "Creating GPU instance..."
     doctl compute droplet create \
         --region nyc2 \
