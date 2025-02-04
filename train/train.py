@@ -52,10 +52,16 @@ async def start_train():
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    # Загрузка модели с квантизацией
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
-    #model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda")
-    print(model.device)
+    # Загружаем модель в meta-режиме (Lazy Loading)
+    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16)
+    model.to(device)  # Явно переместим на MPS
+
+    # Явно инициализируем веса, если они в meta-режиме
+    if next(model.parameters()).device == torch.device("meta"):
+        model.to_empty(device)
+
+    #model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    print(f"Model device map: {model.hf_device_map if hasattr(model, 'hf_device_map') else model.device}")
 
     def tokenize_function(examples):
         model_inputs = tokenizer(
@@ -63,7 +69,7 @@ async def start_train():
             truncation=True,
             padding='max_length',
             return_tensors="pt"
-        ).to(device)
+        )
         
         # #Проверка структуры
         # print("\nСтруктура model_inputs после токенизации:")
@@ -166,14 +172,15 @@ async def start_train():
     print("pad_token_id:", tokenizer.pad_token_id)
     print("padding_side:", tokenizer.padding_side)
 
-    # mac_config = TrainingConfig.from_yaml('training_configs.yaml', 'h100_config')
-    # training_args = mac_config.to_training_arguments()
-
-    if device == "cuda":
+    if device.type == "cuda":
         training_args = TrainingConfig.from_yaml('training_configs.yaml', 'h100_config').to_training_arguments()
+        print("Use CUDA trainer")
+    elif device.type == "mps":
+        training_args = TrainingConfig.from_yaml('training_configs.yaml', 'mac_config').to_training_arguments()
+        print("Use MPS trainer")
     else:
         training_args = TrainingConfig.from_yaml('training_configs.yaml', 'mac_config').to_training_arguments()
-        
+        print("Use CPU trainer")
 
     # Инициализация тренера
     trainer = Trainer(
