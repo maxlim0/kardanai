@@ -16,7 +16,7 @@ class TrainingConfig:
     eval_strategy: str
     eval_steps: int
     save_steps: int
-    learning_rate: float
+    learning_rate: str
     weight_decay: float
     fp16: bool
     use_cpu: bool
@@ -30,6 +30,9 @@ class TrainingConfig:
     logging_first_step: bool
     logging_steps: int
     overwrite_output_dir: bool
+    load_best_model_at_end: bool
+    metric_for_best_model: str
+    greater_is_better: bool
 
     @classmethod
     def from_yaml(cls, path: str, config_name: str) -> 'TrainingConfig':
@@ -66,7 +69,10 @@ class TrainingConfig:
             disable_tqdm=self.disable_tqdm,
             logging_first_step=self.logging_first_step,
             logging_steps=self.logging_steps,
-            overwrite_output_dir=self.overwrite_output_dir
+            overwrite_output_dir=self.overwrite_output_dir,
+            load_best_model_at_end=self.load_best_model_at_end,
+            metric_for_best_model=self.metric_for_best_model,
+            greater_is_better=self.greater_is_better,
         )
     
 # # usage_example.py

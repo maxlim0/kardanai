@@ -9,6 +9,7 @@ from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, NEPTUNE_API_TOKEN, NEPTU
 import torch
 import neptune
 from trainer_config import TrainingConfig
+from transformers.trainer_callback import EarlyStoppingCallback
 
 from transformers import (
     AutoModelForCausalLM,
@@ -24,23 +25,12 @@ from peft import (
     get_peft_model,
 )
 
-# Переключение между локальным тестированием и CUDA 
-# local
-# fp16=False,
-# tokenize_function()
-# #device = torch.device("cuda") закоменчена
-
-
-# cuda
-# fp16=True, 
-# tokenize_function().to(device)
-#device = torch.device("cuda") раскоменчена
-
 os.environ["TOKENIZERS_PARALLELISM"] = "True"
  
 async def start_train():
-    # Инициализация модели и токенизатора
-    model_id = "meta-llama/Llama-3.2-1B"
+#    model_id = "meta-llama/Llama-3.2-1B"
+    model_id = "meta-llama/Llama-3.2-3B"
+
     tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True,)
 
     # # Открываем файл для записи
@@ -54,7 +44,7 @@ async def start_train():
 
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
-    tokenizer.model_max_length = 512
+    tokenizer.model_max_length = 768
 
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -73,7 +63,6 @@ async def start_train():
             truncation=True,
             padding='max_length',
             return_tensors="pt"
-#        )
         ).to(device)
         
         # #Проверка структуры
@@ -177,8 +166,14 @@ async def start_train():
     print("pad_token_id:", tokenizer.pad_token_id)
     print("padding_side:", tokenizer.padding_side)
 
-    mac_config = TrainingConfig.from_yaml('training_configs.yaml', 'mac_config')
-    training_args = mac_config.to_training_arguments()
+    # mac_config = TrainingConfig.from_yaml('training_configs.yaml', 'h100_config')
+    # training_args = mac_config.to_training_arguments()
+
+    if device == "cuda":
+        training_args = TrainingConfig.from_yaml('training_configs.yaml', 'h100_config').to_training_arguments()
+    else:
+        training_args = TrainingConfig.from_yaml('training_configs.yaml', 'mac_config').to_training_arguments()
+        
 
     # Инициализация тренера
     trainer = Trainer(
@@ -187,6 +182,7 @@ async def start_train():
         train_dataset=tokenized_train,
         eval_dataset=tokenized_valid,
         data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, pad_to_multiple_of=8, mlm=False),
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         #compute_metrics=CustomMetrics().compute_metrics,
     )
 
