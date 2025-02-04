@@ -8,3 +8,4 @@ config.py
 *.bak
 model/
 .vscode/
+.neptune

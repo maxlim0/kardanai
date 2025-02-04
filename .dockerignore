@@ -7,3 +7,4 @@ data/model
 data/processed
 data/raw
 .vscode/
+.neptune

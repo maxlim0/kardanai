@@ -1,12 +1,14 @@
+import os
 import asyncio
 from qa_dataset_loader import constitution_load_dataset
 from original_dataset_loader import export_ru_original
 from datasets import Dataset, concatenate_datasets
 from huggingface_hub import login
 from utils.save_model_artifact import upload_to_gcs
-from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN
+from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, NEPTUNE_API_TOKEN, NEPTUNE_PROJECT
 import torch
-import logging
+import neptune
+from trainer_config import TrainingConfig
 
 from transformers import (
     AutoModelForCausalLM,
@@ -34,6 +36,8 @@ from peft import (
 # tokenize_function().to(device)
 #device = torch.device("cuda") раскоменчена
 
+os.environ["TOKENIZERS_PARALLELISM"] = "True"
+ 
 async def start_train():
     # Инициализация модели и токенизатора
     model_id = "meta-llama/Llama-3.2-1B"
@@ -52,11 +56,15 @@ async def start_train():
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.model_max_length = 512
 
-    device = torch.device("cuda")
+    try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    except:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
 
     # Загрузка модели с квантизацией
-    # model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda")
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    #model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda")
     print(model.device)
 
     def tokenize_function(examples):
@@ -65,6 +73,7 @@ async def start_train():
             truncation=True,
             padding='max_length',
             return_tensors="pt"
+#        )
         ).to(device)
         
         # #Проверка структуры
@@ -168,33 +177,8 @@ async def start_train():
     print("pad_token_id:", tokenizer.pad_token_id)
     print("padding_side:", tokenizer.padding_side)
 
-    # Настройка параметров обучения
-    training_args = TrainingArguments(
-        output_dir="data/model/llama_lora_output",  # Директория для сохранения модели и логов
-        num_train_epochs=32,                   # Количество эпох обучения # H100 ~ 15 минту
-        per_device_train_batch_size=32,         # Размер батча для обучения на одном устройстве
-        #per_device_train_batch_size=4,         # Размер батча для обучения на одном устройстве
-        per_device_eval_batch_size=4,          # Размер батча для валидации на одном устройстве  
-        gradient_accumulation_steps=2,         # Шаги накопления градиента перед оптимизацией имитируем большой батч: per_device_train_batch_size * gradient_accumulation_steps
-        eval_strategy="steps",                 # Стратегия оценки - каждые n шагов
-        eval_steps=70,                         # Количество пакетов для оценки
-        save_steps=200,                        # Частота сохранения чекпоинтов
-        learning_rate=1e-5,                    # Скорость обучения 
-        weight_decay=0.01,                     # Коэффициент L2-регуляризации
-        #fp16=False,                            # Использование 16-битной точности
-        fp16=True,
-        use_cpu=False,
-        warmup_ratio=0.1,                      # 0.1 =  10% # Количество шагов для разогрева learning rate
-        save_total_limit=1,                    # Максимальное количество сохраняемых чекпоинтов
-        logging_dir="data/model/logs",
-        report_to=["tensorboard"],
-        do_train=True,
-        do_eval=True,
-        disable_tqdm=False,
-        logging_first_step=True,
-        logging_steps=1,
-        overwrite_output_dir=True,
-    )
+    mac_config = TrainingConfig.from_yaml('training_configs.yaml', 'mac_config')
+    training_args = mac_config.to_training_arguments()
 
     # Инициализация тренера
     trainer = Trainer(
@@ -205,7 +189,6 @@ async def start_train():
         data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, pad_to_multiple_of=8, mlm=False),
         #compute_metrics=CustomMetrics().compute_metrics,
     )
-
 
     # Определение максимальной длины последовательности
     # 1380
@@ -218,14 +201,11 @@ async def start_train():
     print(f"Max sequence length: {max(max_lengths)}")
     print(f"Model max length: {tokenizer.model_max_length}")
 
+    os.environ["NEPTUNE_PROJECT"] = NEPTUNE_PROJECT
+    os.environ["NEPTUNE_API_TOKEN"] = NEPTUNE_API_TOKEN
+    neptune.init_run()
 
-    # Получим спец токены
-    #print(f"tokenizer.all_special_tokens {tokenizer.all_special_tokens}")
-
-    #Запуск обучения
     trainer.train()
-
-    #Сохранение адаптера
     model.save_pretrained("data/export/model")
 
     upload_to_gcs(
@@ -234,13 +214,6 @@ async def start_train():
         "model/"   # Имя папки в бакете
     )
 
-    # print("Настройки токенизатора:")
-    # print(f"padding_side: {tokenizer.padding_side}")
-    # print(f"pad_token: {tokenizer.pad_token}")
-    # print(f"pad_token_id: {tokenizer.pad_token_id}")
-
-
-import os
 async def main():
     login(token=HF_TOKEN)
     await start_train()

@@ -108,7 +108,7 @@
             ulimits:
               - "memlock:-1:-1"
               - "stack:67108864:67108864"
-
+              
       rescue:
         - name: Log failure
           debug:
