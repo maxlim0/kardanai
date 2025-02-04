@@ -4,7 +4,7 @@ from peft import PeftModel
 # Путь к базовой модели и адаптерам
 #base_model_path = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 base_model_path = "meta-llama/Llama-3.2-1B"
-lora_model_path = "/Users/max/PycharmProjects/Topic/data/model/llama_lora_output/checkpoint-128"
+lora_model_path = "/Users/max/PycharmProjects/Topic/data/model/03-02-2025-18-07/model/llama_lora_output/checkpoint-1024"
 
 # Загрузка базовой модели и токенизатора
 model = AutoModelForCausalLM.from_pretrained(base_model_path)
@@ -26,5 +26,5 @@ def generate_answer(question):
 # Если do_sample=True, top_p и temperature влияют на выборку токенов.
 
 # Пример использования
-question = "Отвечай на русском. Что написанно в статье 21 Конституции Украины?"
+question = "Какие права имеют дети согласно Конституции Украины"
 print(generate_answer(question))

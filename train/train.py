@@ -171,13 +171,13 @@ async def start_train():
     # Настройка параметров обучения
     training_args = TrainingArguments(
         output_dir="data/model/llama_lora_output",  # Директория для сохранения модели и логов
-        num_train_epochs=8,                   # Количество эпох обучения
+        num_train_epochs=32,                   # Количество эпох обучения # H100 ~ 15 минту
         per_device_train_batch_size=32,         # Размер батча для обучения на одном устройстве
         #per_device_train_batch_size=4,         # Размер батча для обучения на одном устройстве
         per_device_eval_batch_size=4,          # Размер батча для валидации на одном устройстве  
         gradient_accumulation_steps=2,         # Шаги накопления градиента перед оптимизацией имитируем большой батч: per_device_train_batch_size * gradient_accumulation_steps
         eval_strategy="steps",                 # Стратегия оценки - каждые n шагов
-        eval_steps=25,                         # Количество пакетов для оценки
+        eval_steps=70,                         # Количество пакетов для оценки
         save_steps=200,                        # Частота сохранения чекпоинтов
         learning_rate=1e-5,                    # Скорость обучения 
         weight_decay=0.01,                     # Коэффициент L2-регуляризации
@@ -247,4 +247,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
