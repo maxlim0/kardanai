@@ -78,6 +78,13 @@
             state: present
             timeout: 60
 
+        - name: Check Docker daemon
+          command: docker info
+          register: docker_info
+          retries: 200
+          delay: 10
+          until: docker_info.rc == 0
+
         - name: Log in to DockerHub
           docker_login:
             username: "{{ dockerhub_username }}"
