@@ -224,3 +224,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# docker run --name train --gpus all --ipc=host  --entrypoint=/bin/bash --ulimit memlock=-1:-1 --ulimit stack=67108864:67108864 -v /in_container_app:/app/data/model -it maxsolyaris/kardanai
