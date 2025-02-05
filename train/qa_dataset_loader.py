@@ -16,7 +16,7 @@ def constitution_load_dataset(ds_source_dir):
             text = f.read()
             examples = text.strip().split('\n\n')
             texts.extend(examples)
-            print(f"Количество строк в данных: {len(text)}")
+        print(f"Количество строк в данных: {len(text)} {file_path}")
     
     data = []
     for example in texts:
@@ -51,11 +51,12 @@ def constitution_load_dataset(ds_source_dir):
                 continue
 
     #print(data[4])    
+    print(f"Количество примеров в датасете QA:{len(data)}") 
     return Dataset.from_list(data)
 
-dataset = constitution_load_dataset("data/export/")
+# dataset = constitution_load_dataset("data/export/")
 
-print(f"Количество примеров в датасете QA: {len(dataset)}")
+# print(f"Количество примеров в датасете QA: {len(dataset)}")
 # print(dataset.shape[0])  # Количество строк
 # print(dataset.num_rows)  # Количество строк
 

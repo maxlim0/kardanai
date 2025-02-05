@@ -40,7 +40,7 @@ async def start_train():
         
     #     # Печатаем переменную в файл
     #     print(tokenizer.get_vocab(), file=file)
-    print(f"tokenizer.vocab_size: {tokenizer.vocab_size}")
+    #print(f"tokenizer.vocab_size: {tokenizer.vocab_size}")
 
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -94,6 +94,7 @@ async def start_train():
     model = get_peft_model(model, lora_config)
 
     # Загрузка и подготовка данных
+    print("Debug: Constitution dataset loading...")
     dataset_qa_texts_not_formatted = constitution_load_dataset("data/export")
     dataset_qa_texts_formatted = [
         {"text": f"{tokenizer.bos_token}{q}{tokenizer.eos_token}{tokenizer.bos_token}{a}{tokenizer.eos_token}"} 
@@ -117,9 +118,9 @@ async def start_train():
     print(f"Обьеденненный dataset: {len(dataset)}")
 
     # Разделение на train/test
-    train_dataset, valid_dataset = dataset.train_test_split(test_size=0.1, seed=42).values()
-    print(train_dataset)
-
+    train_dataset, valid_dataset = dataset.train_test_split(test_size=0.05, seed=42).values()
+    print(f"Train dataset size: {len(train_dataset)}")
+    print(f"Test dataset size: {len(valid_dataset)}")
 
     columns_to_remove = ['text']
     # # Токенизация данных
