@@ -27,12 +27,16 @@ mac_config:
   greater_is_better: false
 
 
+# 63 шага/эпоху × 4.12s/шаг = 259.56 секунд/эпоху ≈ 4.33 минуты/эпоху.
+# ~13 эпох в час; 1250 шагов
+# total eval 8 * 4 * 5 evals = 2.6 min
+
 h100_config:
   name: "h100"
-  num_train_epochs: 20 # ~13 эпох в час; 62,5 батча на эпоху; 1250 шагов
-  per_device_train_batch_size: 8
-  per_device_eval_batch_size: 2
+  num_train_epochs: 23 # ~1h 45min 
+  per_device_train_batch_size: 16
   gradient_accumulation_steps: 4
+  per_device_eval_batch_size: 8
   eval_strategy: "steps"
   eval_steps: 200
   save_steps: 200
@@ -51,6 +55,6 @@ h100_config:
   logging_dir: "data/model/logs"
   report_to: ["tensorboard", "neptune"]
   output_dir: "data/model/llama_lora_output"
-  load_best_model_at_end: true,
-  metric_for_best_model: eval_loss,
-  greater_is_better: false,
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false

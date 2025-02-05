@@ -35,8 +35,8 @@ async def export_ru_original():
 
     return Dataset.from_list(data)
 
-async def main():
-    await export_ru_original()
+# async def main():
+#     await export_ru_original()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
