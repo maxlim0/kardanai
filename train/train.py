@@ -4,7 +4,7 @@ from train.qa_dataset_loader_v1 import constitution_load_dataset
 from original_dataset_loader import export_ru_original
 from datasets import Dataset, concatenate_datasets
 from huggingface_hub import login
-from utils.save_model_artifact import upload_to_gcs
+from utils.gcp_worker import upload_to_gcs
 from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, NEPTUNE_API_TOKEN, NEPTUNE_PROJECT
 import torch
 import neptune

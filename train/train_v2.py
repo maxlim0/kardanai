@@ -5,12 +5,13 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 from qa_dataset_loader_v2 import constitution_load_dataset
 from datasets import Dataset, concatenate_datasets
 from huggingface_hub import login
-from utils.save_model_artifact import upload_to_gcs
-from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, WANDB_API_KEY
+from utils.gcp_worker import GCPWorker
+from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, WANDB_API_KEY, MODEL_CONTINUE
 import torch
 from trainer_config import TrainingConfig
 from transformers.trainer_callback import EarlyStoppingCallback
 from trl import SFTTrainer
+from peft import PeftModel
 
 from transformers import (
     AutoModelForCausalLM,
@@ -40,7 +41,7 @@ async def start_train():
 
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
-    tokenizer.model_max_length = 768
+    tokenizer.model_max_length = 1024
     #tokenizer.model_max_length = 128
 
     try:
@@ -51,6 +52,17 @@ async def start_train():
 
     # Загружаем модель в meta-режиме (Lazy Loading)
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16)
+
+    # create gcp_worker anyway needed for upload
+    gcp_worker = GCPWorker(GCP_BUCKET_MODEL_ARTIFACT, "data/model/", "model/")
+    if MODEL_CONTINUE == "true":
+        print("Continue training from checkout")
+        gcp_worker.download_from_gcp("continue/", "data/model/continue")
+        lora_checkpoint = "data/model/continue"
+        model = PeftModel.from_pretrained(model, lora_checkpoint)
+    else:
+        print("Start new training")
+
     model.to(device)  # Явно переместим на MPS
 
     # Явно инициализируем веса, если они в meta-режиме
@@ -209,11 +221,7 @@ async def start_train():
     trainer.train()
     model.save_pretrained("data/export/model")
 
-    upload_to_gcs(
-        GCP_BUCKET_MODEL_ARTIFACT,
-        "data/model/",  # Директория для загрузки
-        "model/"   # Имя папки в бакете
-    )
+    gcp_worker.upload_to_gcs()
 
 async def main():
     login(token=HF_TOKEN)

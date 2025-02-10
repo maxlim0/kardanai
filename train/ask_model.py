@@ -6,15 +6,14 @@ from peft import PeftModel
 #base_model_path = "meta-llama/Llama-3.2-1B"
 #base_model_path = "meta-llama/Llama-3.2-3B"
 base_model_path = "meta-llama/Llama-3.2-3B-Instruct"
-
-lora_model_path = "/Users/max/PycharmProjects/Topic/data/model/llama_lora_output/checkpoint-1254"
+lora_model_path = "/Users/max/PycharmProjects/Topic/data/model/a5000-30m/model/llama_lora_output/checkpoint-664"
 
 # Загрузка базовой модели и токенизатора
 model = AutoModelForCausalLM.from_pretrained(base_model_path)
 tokenizer = AutoTokenizer.from_pretrained(base_model_path)
 
 # Применение LoRA-адаптера к модели
-#model = PeftModel.from_pretrained(model, lora_model_path)
+model = PeftModel.from_pretrained(model, lora_model_path)
 
 # Функция генерации ответа
 def generate_answer(question):
@@ -37,5 +36,5 @@ messages = [
 print(messages)
 
 # Пример использования
-question = "Какого цвета флаг Украины?"
+question = "Кто обязан не наносить вред природе и культурному наследию согласно статье 66 Конституции Украины?"
 print(generate_answer(question))
