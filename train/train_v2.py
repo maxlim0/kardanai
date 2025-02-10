@@ -1,22 +1,23 @@
 import os
 import asyncio
-from train.qa_dataset_loader_v1 import constitution_load_dataset
-from original_dataset_loader import export_ru_original
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
+from qa_dataset_loader_v2 import constitution_load_dataset
 from datasets import Dataset, concatenate_datasets
 from huggingface_hub import login
 from utils.save_model_artifact import upload_to_gcs
-from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, NEPTUNE_API_TOKEN, NEPTUNE_PROJECT
+from config import GCP_BUCKET_MODEL_ARTIFACT, HF_TOKEN, WANDB_API_KEY
 import torch
-import neptune
 from trainer_config import TrainingConfig
 from transformers.trainer_callback import EarlyStoppingCallback
+from trl import SFTTrainer
 
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     TrainingArguments,
     Trainer,
-    DataCollatorForLanguageModeling,
+    DataCollatorForSeq2Seq,
 )
 
 from peft import (
@@ -26,25 +27,21 @@ from peft import (
 )
 
 os.environ["TOKENIZERS_PARALLELISM"] = "True"
+os.environ["WANDB_PROJECT"] = "first"
+os.environ["WANDB_LOG_MODEL"] = "checkpoint" 
+os.environ["WANDB_API_KEY"] = WANDB_API_KEY
  
 async def start_train():
-#    model_id = "meta-llama/Llama-3.2-1B"
-    model_id = "meta-llama/Llama-3.2-3B"
+    #model_id = "meta-llama/Llama-3.2-1B"
+    #model_id = "meta-llama/Llama-3.2-3B"
+    model_id = "meta-llama/Llama-3.2-3B-Instruct"
 
     tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True,)
-
-    # # Открываем файл для записи
-    # with open("vocab.txt", "w", encoding="utf-8") as file:
-    #     # Переменная, которую нужно записать
-    #     data = "Пример данных для записи"
-        
-    #     # Печатаем переменную в файл
-    #     print(tokenizer.get_vocab(), file=file)
-    #print(f"tokenizer.vocab_size: {tokenizer.vocab_size}")
 
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.model_max_length = 768
+    #tokenizer.model_max_length = 128
 
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -71,12 +68,12 @@ async def start_train():
             return_tensors="pt"
         )
         
-        # #Проверка структуры
+        #Проверка структуры
         # print("\nСтруктура model_inputs после токенизации:")
         # print(f"Тип input_ids: {type(model_inputs['input_ids'])}")
         # if len(model_inputs['input_ids']) > 0:
         #     print(f"Длина первой последовательности: {len(model_inputs['input_ids'][0])}")
-        
+
         model_inputs['labels'] = model_inputs['input_ids'].clone()    
         return model_inputs
 
@@ -86,8 +83,9 @@ async def start_train():
         lora_alpha=16,           # альфа параметр  # alpha = 2*r (стандартная практика)
         lora_dropout=0.05,       # dropout для регуляризации
         bias="none",
-        task_type="CAUSAL_LM",   # тип задачи
-        target_modules=["q_proj", "v_proj"]  # целевые слои для адаптации
+        task_type="CAUSAL_LM", 
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",  
+                        "gate_proj", "up_proj", "down_proj"] 
     )
 
     # Применение LoRA к модели
@@ -95,38 +93,59 @@ async def start_train():
 
     # Загрузка и подготовка данных
     print("Debug: Constitution dataset loading...")
-    dataset_qa_texts_not_formatted = constitution_load_dataset("data/export")
-    dataset_qa_texts_formatted = [
-        {"text": f"{tokenizer.bos_token}{q}{tokenizer.eos_token}{tokenizer.bos_token}{a}{tokenizer.eos_token}"} 
-        for q, a in zip(
-            dataset_qa_texts_not_formatted["вопрос"],
-            dataset_qa_texts_not_formatted["ответ"]
-        )
-    ]
+    primers_list = constitution_load_dataset("data/export")
 
-    # Преобразование в датасет
-    ds_dataset_qa_texts_formatted = Dataset.from_list(dataset_qa_texts_formatted)
-    #print(f"ds_dataset_qa_texts_formatted: {len(ds_dataset_qa_texts_formatted)}")
+    #print(dataset)
+    print(f"Обьеденненный dataset: {len(primers_list)}")
 
-    # Загрузка второго датасета
-    dataset_original_ru_texts = await export_ru_original()
-    #print(f"dataset_original_ru_texts: {len(dataset_original_ru_texts)}")
+    """
+    <|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-    # Объединение датасетов
-    dataset = concatenate_datasets([ds_dataset_qa_texts_formatted, dataset_original_ru_texts])
-    print("-=-----------------------")
-    print(f"Обьеденненный dataset: {len(dataset)}")
+    Cutting Knowledge Date: December 2023
+    Today Date: 23 July 2024
+
+    You are a helpful assistant<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+    What is the capital of France?<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+    """
+
+    # chat_template = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+    # Cutting Knowledge Date: December 2023
+    # Today Date: 19 Oct 2024
+    # You are a helpful AI assistant<|eot_id|>{%- for message in messages -%}
+    # {%- if message['role'] == 'user' -%}<|start_header_id|>user<|end_header_id|>
+    # {{ message['content'] }}<|eot_id|>{%- elif message['role'] == 'assistant' -%}<|start_header_id|>assistant<|end_header_id|>
+    # {{ message['content'] }}<|eot_id|>{%- endif -%}
+    # {%- endfor -%}"""
+
+    chat_template = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>You are a helpful AI assistant<|eot_id|>{%- for message in messages -%}{%- if message['role'] == 'user' -%}<|start_header_id|>user<|end_header_id|>{{ message['content'] }}<|eot_id|>{%- elif message['role'] == 'assistant' -%}<|start_header_id|>assistant<|end_header_id|>{{ message['content'] }}<|eot_id|>{%- endif -%}{%- endfor -%}"""
+
+    #from trl import apply_chat_template
+    #result = tokenizer.apply_chat_template(dataset[0]["messages"], chat_template=chat_template, tokenize=False)
+
+    def formatting_prompts(examples):
+        samples = []
+        for example in examples:  # Перебираем все примеры
+            text = tokenizer.apply_chat_template(
+                example["messages"],
+                chat_template=chat_template,
+                tokenize=False,
+                add_generation_prompt=False
+            )
+            samples.append({"text": text})
+        return samples
+
+    templated_primers_list = formatting_prompts(primers_list)
+    dataset = Dataset.from_list(templated_primers_list)
 
     # Разделение на train/test
     train_dataset, valid_dataset = dataset.train_test_split(test_size=0.05, seed=42).values()
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Test dataset size: {len(valid_dataset)}")
 
-    columns_to_remove = ['text']
     # # Токенизация данных
     tokenized_train = train_dataset.map(tokenize_function, batched=True, batch_size=128)
     tokenized_valid = valid_dataset.map(tokenize_function, batched=True, batch_size=128)
-
 
     # TODO надо будет нормализовать ответы что бы не ела память при паддинге 
     # более 1000: 7 элементов
@@ -164,15 +183,6 @@ async def start_train():
     #     if isinstance(sample[key], list):
     #         print(f"Тип первого элемента: {type(sample[key][0])}")
 
-    # И посмотрим на конфигурацию токенизатора
-    print("\nКонфигурация токенизатора:")
-    print(tokenizer.special_tokens_map)
-
-    print("До настройки:")
-    print("pad_token:", tokenizer.pad_token)
-    print("pad_token_id:", tokenizer.pad_token_id)
-    print("padding_side:", tokenizer.padding_side)
-
     if device.type == "cuda":
         training_args = TrainingConfig.from_yaml('training_configs.yaml', 'h100_config').to_training_arguments()
         print("Use CUDA trainer")
@@ -184,31 +194,18 @@ async def start_train():
         print("Use CPU trainer")
 
     # Инициализация тренера
-    trainer = Trainer(
+    trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train,
         eval_dataset=tokenized_valid,
-        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, pad_to_multiple_of=8, mlm=False),
+        data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, pad_to_multiple_of=8),
         callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
-        #compute_metrics=CustomMetrics().compute_metrics,
     )
 
-    # Определение максимальной длины последовательности
-    # 1380
-    max_length = tokenizer.model_max_length
-    print(f"tokenizer.model_max_length: {max_length}")
-    print(f"model.config.max_position_embeddings {model.config.max_position_embeddings}")
-
-    max_lengths = [len(x["input_ids"]) for x in tokenized_train]
-
-    print(f"Max sequence length: {max(max_lengths)}")
-    print(f"Model max length: {tokenizer.model_max_length}")
-
-    os.environ["NEPTUNE_PROJECT"] = NEPTUNE_PROJECT
-    os.environ["NEPTUNE_API_TOKEN"] = NEPTUNE_API_TOKEN
-    neptune.init_run()
-
+    import wandb
+    wandb.init()
+    
     trainer.train()
     model.save_pretrained("data/export/model")
 

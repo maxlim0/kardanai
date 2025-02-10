@@ -33,6 +33,7 @@ class TrainingConfig:
     load_best_model_at_end: bool
     metric_for_best_model: str
     greater_is_better: bool
+    use_liger_kernel: bool
 
     @classmethod
     def from_yaml(cls, path: str, config_name: str) -> 'TrainingConfig':
@@ -73,6 +74,7 @@ class TrainingConfig:
             load_best_model_at_end=self.load_best_model_at_end,
             metric_for_best_model=self.metric_for_best_model,
             greater_is_better=self.greater_is_better,
+            use_liger_kernel=self.use_liger_kernel
         )
     
 # # usage_example.py

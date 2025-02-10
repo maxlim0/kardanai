@@ -1,4 +1,3 @@
-poetry.lock
 **/__pycache__
 **/*.pyc
 **/*.pyo
@@ -8,3 +7,4 @@ data/processed
 data/raw
 .vscode/
 .neptune
+wandb/

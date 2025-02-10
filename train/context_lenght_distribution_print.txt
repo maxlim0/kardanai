@@ -1,0 +1,40 @@
+https://huggingface.co/blog/ImranzamanML/fine-tuning-1b-llama-32-a-comprehensive-article
+
+data['Context_length'] = data['Context'].apply(len)
+plt.figure(figsize=(10, 3))
+sns.histplot(data['Context_length'], bins=50, kde=True)
+plt.title('Distribution of Context Lengths')
+plt.xlabel('Length of Context')
+plt.ylabel('Frequency')
+plt.show()
+
+
+filtered_data = data[data['Context_length'] <= 1500]
+
+ln_Context = filtered_data['Context'].apply(len)
+plt.figure(figsize=(10, 3))
+sns.histplot(ln_Context, bins=50, kde=True)
+plt.title('Distribution of Context Lengths')
+plt.xlabel('Length of Context')
+plt.ylabel('Frequency')
+plt.show()
+
+
+
+ln_Response = filtered_data['Response'].apply(len)
+plt.figure(figsize=(10, 3))
+sns.histplot(ln_Response, bins=50, kde=True, color='teal')
+plt.title('Distribution of Response Lengths')
+plt.xlabel('Length of Response')
+plt.ylabel('Frequency')
+plt.show()
+
+filtered_data = filtered_data[ln_Response <= 4000]
+
+ln_Response = filtered_data['Response'].apply(len)
+plt.figure(figsize=(10, 3))
+sns.histplot(ln_Response, bins=50, kde=True, color='teal')
+plt.title('Distribution of Response Lengths')
+plt.xlabel('Length of Response')
+plt.ylabel('Frequency')
+plt.show()

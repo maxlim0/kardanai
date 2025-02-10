@@ -9,3 +9,4 @@ config.py
 model/
 .vscode/
 .neptune
+wandb/

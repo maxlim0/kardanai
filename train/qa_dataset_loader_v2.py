@@ -4,7 +4,7 @@ import os
 import re
 from datasets import Dataset 
 
-def constitution_load_datasets(ds_source_dir):
+def constitution_load_dataset(ds_source_dir):
     if os.path.isfile(ds_source_dir):
         files = [ds_source_dir]
     else:
@@ -43,7 +43,8 @@ def constitution_load_datasets(ds_source_dir):
             except Exception as e:
                 print(f"Ошибка при обработке строки: {example}. Ошибка: {e}")
                 continue
-    return Dataset.from_list(data)
+    return data
+    #return Dataset.from_list(data)
 
 # def main():
 #     ds = (constitution_load_datasets("/Users/max/PycharmProjects/Topic/data/export"))

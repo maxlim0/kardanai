@@ -4,7 +4,9 @@ from peft import PeftModel
 # Путь к базовой модели и адаптерам
 #base_model_path = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 #base_model_path = "meta-llama/Llama-3.2-1B"
-base_model_path = "meta-llama/Llama-3.2-3B"
+#base_model_path = "meta-llama/Llama-3.2-3B"
+base_model_path = "meta-llama/Llama-3.2-3B-Instruct"
+
 lora_model_path = "/Users/max/PycharmProjects/Topic/data/model/llama_lora_output/checkpoint-1254"
 
 # Загрузка базовой модели и токенизатора
@@ -12,7 +14,7 @@ model = AutoModelForCausalLM.from_pretrained(base_model_path)
 tokenizer = AutoTokenizer.from_pretrained(base_model_path)
 
 # Применение LoRA-адаптера к модели
-model = PeftModel.from_pretrained(model, lora_model_path)
+#model = PeftModel.from_pretrained(model, lora_model_path)
 
 # Функция генерации ответа
 def generate_answer(question):
@@ -25,6 +27,14 @@ def generate_answer(question):
 # Эти параметры работают вместе, чтобы контролировать случайность и разнообразие текста.
 # Если do_sample=False, top_p и temperature игнорируются, и модель использует жадный поиск.
 # Если do_sample=True, top_p и temperature влияют на выборку токенов.
+
+
+messages = [
+    {"role": "system", "content": "Ты ассистент юриста. Отвечающий на русском."},
+    {"role": "user", "content": "Какого цвета флаг Украины"},
+]
+
+print(messages)
 
 # Пример использования
 question = "Какого цвета флаг Украины?"

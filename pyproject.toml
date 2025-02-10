@@ -25,7 +25,8 @@ torch-tb-profiler = "^0.4.3"
 deptry = "^0.23.0"
 google-cloud-storage = "^3.0.0"
 torch = "^2.6.0"
-neptune = "^1.13.0"
+wandb = "^0.19.6"
+trl = "^0.14.0"
 
 [build-system]
 requires = ["poetry-core"]

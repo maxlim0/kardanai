@@ -20,11 +20,12 @@ mac_config:
   logging_steps: 1
   overwrite_output_dir: true
   logging_dir: "data/model/logs"
-  report_to: ["tensorboard", "neptune"]
+  report_to: ["tensorboard", "wandb"]
   output_dir: "data/model/llama_lora_output"
   load_best_model_at_end: true
   metric_for_best_model: eval_loss
   greater_is_better: false
+  use_liger_kernel: false # надо поэксперементировать можно уменьшить память для llama
 
 
 # 63 шага/эпоху × 4.12s/шаг = 259.56 секунд/эпоху ≈ 4.33 минуты/эпоху.
@@ -41,7 +42,7 @@ h100_config:
   eval_steps: 200
   save_steps: 200
   save_total_limit: 3
-  learning_rate: 1.0e-5
+  learning_rate: 2.0e-4
   weight_decay: 0.01
   fp16: true
   use_cpu: false
@@ -53,7 +54,7 @@ h100_config:
   logging_steps: 5
   overwrite_output_dir: true
   logging_dir: "data/model/logs"
-  report_to: ["tensorboard", "neptune"]
+  report_to: ["tensorboard", "wandb"]
   output_dir: "data/model/llama_lora_output"
   load_best_model_at_end: true
   metric_for_best_model: eval_loss
