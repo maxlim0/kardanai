@@ -73,10 +73,10 @@ class GCPWorker:
             print(f"Error downloading from GCS: {str(e)}")
             return False
 
-def main():
-    gcp_worker = GCPWorker(GCP_BUCKET_MODEL_ARTIFACT, "data/model/test", "model/")
-    #gcp_worker.upload_to_gcs()
-    gcp_worker.download_from_gcp("10-02-2025-20-37/model/logs/", "/Users/max/PycharmProjects/Topic/test123/")
+# def main():
+#     gcp_worker = GCPWorker(GCP_BUCKET_MODEL_ARTIFACT, "data/model/test", "model/")
+#     #gcp_worker.upload_to_gcs()
+#     gcp_worker.download_from_gcp("10-02-2025-20-37/model/logs/", "/Users/max/PycharmProjects/Topic/test123/")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

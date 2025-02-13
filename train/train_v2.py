@@ -12,6 +12,7 @@ from trainer_config import TrainingConfig
 from transformers.trainer_callback import EarlyStoppingCallback
 from trl import SFTTrainer
 from peft import PeftModel
+from log_eval_callback import LogEvalCallback
 
 from transformers import (
     AutoModelForCausalLM,
@@ -33,6 +34,8 @@ os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 os.environ["WANDB_API_KEY"] = WANDB_API_KEY
  
 async def start_train():
+    RESUME_FROM_CHECKPOINT = None
+
     #model_id = "meta-llama/Llama-3.2-1B"
     #model_id = "meta-llama/Llama-3.2-3B"
     model_id = "meta-llama/Llama-3.2-3B-Instruct"
@@ -53,13 +56,33 @@ async def start_train():
     # Загружаем модель в meta-режиме (Lazy Loading)
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16)
 
+    print("=== До загрузки чекпоинта ===")
+    for name, param in model.named_parameters():
+        if 'lora' in name.lower():
+            print(f"\n{name}:")
+            print(param.flatten()[:5])
+            break
+
     # create gcp_worker anyway needed for upload
     gcp_worker = GCPWorker(GCP_BUCKET_MODEL_ARTIFACT, "data/model/", "model/")
     if MODEL_CONTINUE == "true":
         print("Continue training from checkout")
-        gcp_worker.download_from_gcp("continue/", "data/model/continue")
-        lora_checkpoint = "data/model/continue"
+        gcp_worker.download_from_gcp("continue/", "data/model/llama_lora_output/")
+        
+        lora_checkpoint = "data/model/llama_lora_output/checkpoint-1332/"
         model = PeftModel.from_pretrained(model, lora_checkpoint)
+        RESUME_FROM_CHECKPOINT = True
+
+        print("\n=== После загрузки чекпоинта ===")
+        for name, param in model.named_parameters():
+            if 'lora' in name.lower():
+                print(f"\n{name}:")
+                print(param.flatten()[:5])
+                break
+
+        print("\nАктивные адаптеры:", model.active_adapters)
+        print("Конфигурация LoRA:", model.peft_config)
+        
     else:
         print("Start new training")
 
@@ -212,13 +235,14 @@ async def start_train():
         train_dataset=tokenized_train,
         eval_dataset=tokenized_valid,
         data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, pad_to_multiple_of=8),
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+        #callbacks=[EarlyStoppingCallback(early_stopping_patience=3), LogEvalCallback(tokenizer=tokenizer)],
+        #callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
 
     import wandb
     wandb.init()
     
-    trainer.train()
+    trainer.train(resume_from_checkpoint=RESUME_FROM_CHECKPOINT)
     model.save_pretrained("data/export/model")
 
     gcp_worker.upload_to_gcs()

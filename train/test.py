@@ -33,6 +33,18 @@ def analyze_model_architecture(model):
             for subchild_name, _ in child.named_children():
                 print(f"  Subcomponent: {subchild_name}")
 
+
+#import bitsandbytes as bnb
+def find_all_linear_names(model):
+    #cls = bnb.nn.Linear4bit
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        names = name.split('.')
+        lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+    if 'lm_head' in lora_module_names:  # needed for 16 bit
+        lora_module_names.remove('lm_head')
+    return list(lora_module_names)
+
 def main():
     #model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
     #model_id = "meta-llama/Llama-3.2-1B"
@@ -51,6 +63,10 @@ def main():
     print_layer_info(model)
     print_model_structure(model)
     analyze_model_architecture(model)
+
+
+    modules = find_all_linear_names(model)
+    print(modules)
 
 if __name__ == "__main__":
     main()
